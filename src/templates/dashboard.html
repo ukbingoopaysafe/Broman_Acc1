@@ -105,7 +105,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Set current date
-    const currentDate = new Date().toLocaleDateString('ar-EG', {
+    const currentDate = new Date().toLocaleDateString('en-GB', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -131,16 +131,16 @@ async function loadDashboardStats() {
         document.getElementById('loadingSpinner').style.display = 'none';
         
         // Render statistics cards
-        renderStatsCards(data);
+        try { renderStatsCards(data); } catch (e) { console.error('renderStatsCards failed', e); }
         
         // Render monthly sales chart
-        renderMonthlySalesChart(data.monthly_sales);
+        try { renderMonthlySalesChart(Array.isArray(data.monthly_sales) ? data.monthly_sales : []); } catch (e) { console.error('renderMonthlySalesChart failed', e); }
         
         // Render recent transactions
-        renderRecentTransactions(data.recent_transactions);
+        try { renderRecentTransactions(Array.isArray(data.recent_transactions) ? data.recent_transactions : []); } catch (e) { console.error('renderRecentTransactions failed', e); }
         
         // Render recent sales
-        renderRecentSales(data.recent_sales);
+        try { renderRecentSales(Array.isArray(data.recent_sales) ? data.recent_sales : []); } catch (e) { console.error('renderRecentSales failed', e); }
         
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
@@ -161,14 +161,14 @@ function renderStatsCards(data) {
         },
         {
             title: 'إجمالي المبيعات',
-            value: data.total_sales.toLocaleString('ar-EG'),
+            value: (typeof formatNumber === 'function' ? formatNumber(data.total_sales, { maximumFractionDigits: 0 }) : new Intl.NumberFormat('en-US').format(data.total_sales)),
             icon: 'bi-house-door',
             color: 'success',
             change: null
         },
         {
             title: 'مبيعات هذا الشهر',
-            value: data.sales_this_month.toLocaleString('ar-EG'),
+            value: (typeof formatNumber === 'function' ? formatNumber(data.sales_this_month, { maximumFractionDigits: 0 }) : new Intl.NumberFormat('en-US').format(data.sales_this_month)),
             icon: 'bi-calendar-month',
             color: 'info',
             change: null
@@ -209,12 +209,18 @@ function renderMonthlySalesChart(monthlyData) {
     const ctx = document.getElementById('monthlySalesChart').getContext('2d');
     
     const labels = monthlyData.map(item => {
-        const [year, month] = item.month.split('-');
-        return new Date(year, month - 1).toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+        if (!item || !item.month || typeof item.month !== 'string' || item.month.indexOf('-') === -1) {
+            return '';
+        }
+        const parts = item.month.split('-');
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        if (isNaN(year) || isNaN(month)) return '';
+        return new Date(year, month - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
     });
     
-    const salesData = monthlyData.map(item => item.count);
-    const revenueData = monthlyData.map(item => item.revenue);
+    const salesData = monthlyData.map(item => Number(item && item.count || 0));
+    const revenueData = monthlyData.map(item => Number((item && item.revenue) || 0));
     
     new Chart(ctx, {
         type: 'line',
@@ -274,11 +280,11 @@ function renderRecentTransactions(transactions) {
             <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">${transaction.type}</h6>
                 <small class="text-${transaction.amount >= 0 ? 'success' : 'danger'}">
-                    ${formatCurrency(transaction.amount)}
+                    ${(typeof formatCurrency === 'function') ? formatCurrency(transaction.amount) : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(transaction.amount)}
                 </small>
             </div>
             <p class="mb-1 small">${transaction.description || 'لا يوجد وصف'}</p>
-            <small class="text-muted">${formatDate(transaction.transaction_date)}</small>
+            <small class="text-muted">${(typeof formatDate === 'function') ? formatDate(transaction.transaction_date) : new Date(transaction.transaction_date).toLocaleDateString('en-GB')}</small>
         </div>
     `).join('');
 }
@@ -296,8 +302,8 @@ function renderRecentSales(sales) {
             <td>${sale.client_name}</td>
             <td><code>${sale.unit_code}</code></td>
             <td><span class="badge bg-secondary">${sale.property_type}</span></td>
-            <td>${formatCurrency(sale.unit_price)}</td>
-            <td>${formatDate(sale.sale_date)}</td>
+            <td>${(typeof formatCurrency === 'function') ? formatCurrency(sale.unit_price) : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(sale.unit_price)}</td>
+            <td>${(typeof formatDate === 'function') ? formatDate(sale.sale_date) : new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" onclick="viewSale(${sale.id})">
                     <i class="bi bi-eye"></i>
@@ -307,15 +313,24 @@ function renderRecentSales(sales) {
     `).join('');
 }
 
+// Use global helpers from main.js if available; otherwise fallback
+const __globalFormatCurrency = (typeof window !== 'undefined' && window.formatCurrency) ? window.formatCurrency : null;
+const __globalFormatNumber   = (typeof window !== 'undefined' && window.formatNumber) ? window.formatNumber : null;
+
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('ar-EG', {
-        style: 'currency',
-        currency: 'EGP'
-    }).format(amount);
+    if (__globalFormatCurrency && __globalFormatCurrency !== formatCurrency) {
+        return __globalFormatCurrency(amount, 'EGP');
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(amount||0));
+}
+
+function safeFormatNumber(value, opts) {
+    if (__globalFormatNumber) return __globalFormatNumber(value, opts || { maximumFractionDigits: 0 });
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: (opts && opts.maximumFractionDigits) || 0 }).format(Number(value||0));
 }
 
 function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('ar-EG');
+    return new Date(dateString).toLocaleDateString('en-GB');
 }
 
 function showError(message) {

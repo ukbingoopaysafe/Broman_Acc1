@@ -187,11 +187,21 @@ function initializeTooltips() {
 
 // Utility functions
 function formatCurrency(amount, currency = 'EGP') {
-    return new Intl.NumberFormat('ar-EG', {
+    // English numerals, hide trailing zeros (up to 2 decimals)
+    return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
-        minimumFractionDigits: 2
-    }).format(amount);
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(Number(amount || 0));
+}
+
+function formatNumber(value, options = {}) {
+    const { maximumFractionDigits = 2 } = options;
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits
+    }).format(Number(value || 0));
 }
 
 function formatDate(dateString, options = {}) {
@@ -200,12 +210,11 @@ function formatDate(dateString, options = {}) {
         month: 'long',
         day: 'numeric'
     };
-    
-    return new Date(dateString).toLocaleDateString('ar-EG', { ...defaultOptions, ...options });
+    return new Date(dateString).toLocaleDateString('en-GB', { ...defaultOptions, ...options });
 }
 
 function formatDateTime(dateString) {
-    return new Date(dateString).toLocaleString('ar-EG');
+    return new Date(dateString).toLocaleString('en-GB');
 }
 
 function debounce(func, wait) {

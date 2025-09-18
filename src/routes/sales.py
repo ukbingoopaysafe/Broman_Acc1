@@ -217,9 +217,9 @@ def create_sale():
                 amount=net_company_income,
                 description=f'صافي إيراد من بيع الوحدة {data["unit_code"]} - {data["client_name"]}',
                 transaction_date=datetime.now(),
-                reference_type='sale',
-                reference_id=sale.id,
-                created_by=current_user.id
+                related_entity_type='sale',
+                related_entity_id=sale.id,
+                user_id=current_user.id
             )
             db.session.add(transaction)
             

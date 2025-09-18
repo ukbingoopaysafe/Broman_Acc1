@@ -92,7 +92,7 @@ def set_balance():
         
         # Get current balance
         treasury = Treasury.get_current()
-        old_balance = treasury.balance
+        old_balance = float(treasury.balance)
         
         # Update balance
         Treasury.set_balance(new_balance)
@@ -100,12 +100,12 @@ def set_balance():
         # Create transaction record
         transaction = Transaction(
             type='تعديل رصيد',
-            amount=new_balance - old_balance,
+            amount=float(new_balance - old_balance),
             description=f'{reason} - الرصيد السابق: {old_balance:,.2f} جنيه',
             transaction_date=datetime.now(),
-            reference_type='manual',
-            reference_id=None,
-            created_by=current_user.id
+            related_entity_type='manual',
+            related_entity_id=None,
+            user_id=current_user.id
         )
         db.session.add(transaction)
         db.session.commit()
@@ -221,9 +221,9 @@ def create_transaction():
         
         # Update treasury balance
         if amount > 0:
-            Treasury.add_to_balance(amount)
+            Treasury.add_to_balance(float(amount))
         else:
-            Treasury.subtract_from_balance(abs(amount))
+            Treasury.subtract_from_balance(float(abs(amount)))
         
         db.session.commit()
         
