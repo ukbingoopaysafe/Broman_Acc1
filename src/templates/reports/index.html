@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}التقارير{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex justify-content-between align-items-center">
+    <h3 class="mb-0"><i class="bi bi-graph-up"></i> التقارير</h3>
+    <div class="d-flex gap-2">
+      <input type="date" id="dateFrom" class="form-control" style="max-width: 180px;">
+      <input type="date" id="dateTo" class="form-control" style="max-width: 180px;">
+      <button class="btn btn-primary" id="loadReports">عرض</button>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">ملخص المبيعات</div>
+      <div class="card-body">
+        <div class="h5">عدد المبيعات: <span id="salesCount">0</span></div>
+        <div class="h5">الإيرادات: <span id="salesRevenue">EGP 0</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">ملخص المعاملات</div>
+      <div class="card-body">
+        <div class="h5">الإيرادات: <span id="txIncome">EGP 0</span></div>
+        <div class="h5">المصروفات: <span id="txExpenses">EGP 0</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function q(id) { return document.getElementById(id); }
+
+async function load() {
+  const params = new URLSearchParams();
+  if (q('dateFrom').value) params.set('date_from', q('dateFrom').value);
+  if (q('dateTo').value) params.set('date_to', q('dateTo').value);
+
+  const sales = await fetchJSON('/reports/api/sales-summary?' + params.toString());
+  const tx = await fetchJSON('/reports/api/transactions-summary?' + params.toString());
+
+  if (window.formatNumber) q('salesCount').textContent = formatNumber(sales.count, { maximumFractionDigits: 0 });
+  else q('salesCount').textContent = new Intl.NumberFormat('en-US').format(sales.count);
+
+  if (window.formatCurrency) q('salesRevenue').textContent = formatCurrency(sales.revenue, 'EGP');
+  else q('salesRevenue').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(sales.revenue);
+
+  if (window.formatCurrency) q('txIncome').textContent = formatCurrency(tx.income, 'EGP');
+  else q('txIncome').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.income);
+
+  if (window.formatCurrency) q('txExpenses').textContent = formatCurrency(tx.expenses, 'EGP');
+  else q('txExpenses').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.expenses);
+}
+
+document.getElementById('loadReports').addEventListener('click', () => load().catch(err => alert(err.message)));
+document.addEventListener('DOMContentLoaded', () => load().catch(err => alert(err.message)));
+</script>
+{% endblock %}
+
+
