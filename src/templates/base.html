@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BroMan - إدارة الحسابات{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    {% if current_user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">
+                <i class="bi bi-building"></i>
+                BroMan
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                            <i class="bi bi-speedometer2"></i>
+                            لوحة التحكم
+                        </a>
+                    </li>
+                    
+                    {% if current_user.has_permission('view_sales') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-house-door"></i>
+                            العقارات
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/sales">معاملات البيع</a></li>
+                            {% if current_user.has_permission('create_sales') %}
+                            <li><a class="dropdown-item" href="/sales/new">إضافة معاملة جديدة</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
+                    {% if current_user.has_permission('view_treasury') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/treasury">
+                            <i class="bi bi-safe"></i>
+                            الخزنة
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if current_user.has_permission('view_transactions') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/transactions">
+                            <i class="bi bi-receipt"></i>
+                            المعاملات
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if current_user.has_permission('view_reports') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="bi bi-graph-up"></i>
+                            التقارير
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if current_user.has_permission('manage_users') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-people"></i>
+                            الإدارة
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/users">المستخدمون</a></li>
+                            {% if current_user.has_permission('manage_roles') %}
+                            <li><a class="dropdown-item" href="/roles">الأدوار والصلاحيات</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i>
+                            {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile">الملف الشخصي</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">تسجيل الخروج</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="{% if current_user.is_authenticated %}container-fluid mt-4{% else %}container{% endif %}">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-3 mt-5">
+        <div class="container">
+            <p>&copy; 2024 BroMan - نظام إدارة الحسابات العقارية</p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

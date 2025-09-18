@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}المعاملات المالية - BroMan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-list-ul text-info"></i>
+                المعاملات المالية
+            </h1>
+            <div class="d-flex gap-2">
+                <a href="/treasury" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    العودة للخزنة
+                </a>
+                {% if current_user.has_permission('create_transactions') %}
+                <a href="/treasury/transactions/new" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    إضافة معاملة
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filtersForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">البحث</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="الوصف أو النوع">
+            </div>
+            <div class="col-md-2">
+                <label for="type" class="form-label">نوع المعاملة</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">جميع الأنواع</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">من تاريخ</label>
+                <input type="date" class="form-control" id="date_from" name="date_from">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">إلى تاريخ</label>
+                <input type="date" class="form-control" id="date_to" name="date_to">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                        بحث
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                        مسح
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4" id="summaryCards">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h6>إجمالي الإيرادات</h6>
+                <h4 id="totalIncome">0.00 جنيه</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h6>إجمالي المصروفات</h6>
+                <h4 id="totalExpenses">0.00 جنيه</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h6>الصافي</h6>
+                <h4 id="netAmount">0.00 جنيه</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h6>عدد المعاملات</h6>
+                <h4 id="transactionCount">0</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">قائمة المعاملات</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    تصدير Excel
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="printTable()">
+                    <i class="bi bi-printer"></i>
+                    طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="transactionsTable">
+                <thead>
+                    <tr>
+                        <th>النوع</th>
+                        <th>المبلغ</th>
+                        <th>الوصف</th>
+                        <th>التاريخ</th>
+                        <th>المرجع</th>
+                        <th>المستخدم</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTableBody">
+                    <!-- Transactions will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Transactions pagination" id="paginationContainer" style="display: none;">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Pagination will be loaded dynamically -->
+            </ul>
+        </nav>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+            <p class="mt-2 text-muted">جاري تحميل المعاملات...</p>
+        </div>
+        
+        <!-- No Data Message -->
+        <div id="noDataMessage" class="text-center py-5" style="display: none;">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <h5 class="mt-3 text-muted">لا توجد معاملات</h5>
+            <p class="text-muted">لم يتم العثور على معاملات بالمعايير المحددة</p>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal fade" id="transactionDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل المعاملة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="transactionDetailContent">
+                <!-- Transaction details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <div id="transactionDetailActions">
+                    <!-- Action buttons will be added here based on permissions -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentFilters = {};
+let transactionsData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTransactionTypes();
+    loadTransactions();
+    
+    // Setup filters form
+    document.getElementById('filtersForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        currentPage = 1;
+        loadTransactions();
+    });
+});
+
+async function loadTransactionTypes() {
+    try {
+        const response = await fetch('/treasury/api/transaction-types');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error loading transaction types:', data.error);
+            return;
+        }
+        
+        const select = document.getElementById('type');
+        data.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error loading transaction types:', error);
+    }
+}
+
+async function loadTransactions() {
+    try {
+        showLoading();
+        
+        // Get filter values
+        const formData = new FormData(document.getElementById('filtersForm'));
+        const filters = Object.fromEntries(formData);
+        
+        // Add pagination
+        filters.page = currentPage;
+        filters.per_page = 25;
+        
+        currentFilters = filters;
+        
+        const queryString = new URLSearchParams(filters).toString();
+        const response = await fetch(`/treasury/api/transactions?${queryString}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        transactionsData = data.transactions;
+        renderTransactionsTable(data.transactions);
+        renderPagination(data);
+        updateSummaryCards(data.transactions);
+        
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+        showError('حدث خطأ في تحميل المعاملات');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderTransactionsTable(transactions) {
+    const tbody = document.getElementById('transactionsTableBody');
+    
+    if (transactions.length === 0) {
+        document.getElementById('noDataMessage').style.display = 'block';
+        document.getElementById('paginationContainer').style.display = 'none';
+        tbody.innerHTML = '';
+        return;
+    }
+    
+    document.getElementById('noDataMessage').style.display = 'none';
+    
+    tbody.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td><span class="badge bg-secondary">${transaction.type}</span></td>
+            <td class="${transaction.amount >= 0 ? 'text-success' : 'text-danger'}">
+                ${formatCurrency(transaction.amount)}
+            </td>
+            <td>${transaction.description}</td>
+            <td>${formatDate(transaction.transaction_date)}</td>
+            <td>
+                ${transaction.reference_type === 'sale' ? 
+                    `<span class="badge bg-info">بيع عقار</span>` : 
+                    transaction.reference_type === 'manual' ? 
+                    `<span class="badge bg-warning">يدوي</span>` : 
+                    `<span class="badge bg-secondary">${transaction.reference_type}</span>`
+                }
+            </td>
+            <td>${transaction.created_by_name || '-'}</td>
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-primary" onclick="viewTransaction(${transaction.id})" title="عرض">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${hasPermission('edit_transactions') && transaction.reference_type === 'manual' ? `
+                    <a href="/treasury/transactions/${transaction.id}/edit" class="btn btn-outline-warning" title="تعديل">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    ` : ''}
+                    ${hasPermission('delete_transactions') && transaction.reference_type === 'manual' ? `
+                    <button class="btn btn-outline-danger" onclick="deleteTransaction(${transaction.id})" title="حذف">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderPagination(data) {
+    if (data.pages <= 1) {
+        document.getElementById('paginationContainer').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('paginationContainer').style.display = 'block';
+    
+    const pagination = document.getElementById('pagination');
+    let paginationHTML = '';
+    
+    // Previous button
+    if (data.has_prev) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${data.current_page - 1})">السابق</a>
+            </li>
+        `;
+    }
+    
+    // Page numbers
+    const startPage = Math.max(1, data.current_page - 2);
+    const endPage = Math.min(data.pages, data.current_page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    if (data.has_next) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${data.current_page + 1})">التالي</a>
+            </li>
+        `;
+    }
+    
+    pagination.innerHTML = paginationHTML;
+}
+
+function updateSummaryCards(transactions) {
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    
+    transactions.forEach(transaction => {
+        if (transaction.amount > 0) {
+            totalIncome += transaction.amount;
+        } else {
+            totalExpenses += Math.abs(transaction.amount);
+        }
+    });
+    
+    const netAmount = totalIncome - totalExpenses;
+    
+    document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+    document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+    document.getElementById('netAmount').textContent = formatCurrency(netAmount);
+    document.getElementById('netAmount').className = netAmount >= 0 ? 'text-success' : 'text-danger';
+    document.getElementById('transactionCount').textContent = transactions.length;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadTransactions();
+}
+
+async function viewTransaction(transactionId) {
+    try {
+        const response = await fetch(`/treasury/api/transactions/${transactionId}`);
+        const transaction = await response.json();
+        
+        if (transaction.error) {
+            showError(transaction.error);
+            return;
+        }
+        
+        renderTransactionDetail(transaction);
+        
+        const modal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error loading transaction details:', error);
+        showError('حدث خطأ في تحميل تفاصيل المعاملة');
+    }
+}
+
+function renderTransactionDetail(transaction) {
+    const content = document.getElementById('transactionDetailContent');
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">معلومات المعاملة</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>النوع:</strong></td><td><span class="badge bg-secondary">${transaction.type}</span></td></tr>
+                    <tr><td><strong>المبلغ:</strong></td><td class="${transaction.amount >= 0 ? 'text-success' : 'text-danger'}"><strong>${formatCurrency(transaction.amount)}</strong></td></tr>
+                    <tr><td><strong>التاريخ:</strong></td><td>${formatDate(transaction.transaction_date)}</td></tr>
+                    <tr><td><strong>المرجع:</strong></td><td>
+                        ${transaction.reference_type === 'sale' ? 
+                            `<span class="badge bg-info">بيع عقار</span>` : 
+                            transaction.reference_type === 'manual' ? 
+                            `<span class="badge bg-warning">يدوي</span>` : 
+                            `<span class="badge bg-secondary">${transaction.reference_type}</span>`
+                        }
+                    </td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-info">تفاصيل إضافية</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>المستخدم:</strong></td><td>${transaction.created_by_name || '-'}</td></tr>
+                    <tr><td><strong>تاريخ الإنشاء:</strong></td><td>${formatDateTime(transaction.created_at)}</td></tr>
+                    ${transaction.updated_at ? `<tr><td><strong>آخر تحديث:</strong></td><td>${formatDateTime(transaction.updated_at)}</td></tr>` : ''}
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-success">الوصف</h6>
+                <p class="border p-3 bg-light">${transaction.description}</p>
+            </div>
+        </div>
+    `;
+    
+    // Add action buttons
+    const actions = document.getElementById('transactionDetailActions');
+    let actionsHTML = '';
+    
+    if (hasPermission('edit_transactions') && transaction.reference_type === 'manual') {
+        actionsHTML += `<a href="/treasury/transactions/${transaction.id}/edit" class="btn btn-warning">تعديل</a>`;
+    }
+    
+    if (hasPermission('delete_transactions') && transaction.reference_type === 'manual') {
+        actionsHTML += `<button class="btn btn-danger ms-2" onclick="deleteTransaction(${transaction.id})">حذف</button>`;
+    }
+    
+    actions.innerHTML = actionsHTML;
+}
+
+async function deleteTransaction(transactionId) {
+    if (!confirm('هل أنت متأكد من حذف هذه المعاملة؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/treasury/api/transactions/${transactionId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        showAlert(data.message, 'success');
+        
+        // Close modal if open
+        const modal = bootstrap.Modal.getInstance(document.getElementById('transactionDetailModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Reload transactions
+        loadTransactions();
+        
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        showError('حدث خطأ في حذف المعاملة');
+    }
+}
+
+function clearFilters() {
+    document.getElementById('filtersForm').reset();
+    currentPage = 1;
+    loadTransactions();
+}
+
+function exportToExcel() {
+    if (transactionsData.length === 0) {
+        showAlert('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+    
+    // Prepare data for export
+    const exportData = transactionsData.map(transaction => ({
+        'النوع': transaction.type,
+        'المبلغ': transaction.amount,
+        'الوصف': transaction.description,
+        'التاريخ': transaction.transaction_date,
+        'المرجع': transaction.reference_type,
+        'المستخدم': transaction.created_by_name || '',
+        'تاريخ الإنشاء': transaction.created_at
+    }));
+    
+    exportToCSV(exportData, 'المعاملات_المالية_' + new Date().toISOString().split('T')[0]);
+}
+
+function printTable() {
+    printElement('transactionsTable');
+}
+
+function showLoading() {
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('transactionsTableBody').innerHTML = '';
+    document.getElementById('noDataMessage').style.display = 'none';
+    document.getElementById('paginationContainer').style.display = 'none';
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+function hasPermission(permission) {
+    return userPermissions.includes(permission) || (currentUser && currentUser.role && currentUser.role.name === 'Admin');
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('ar-EG');
+}
+</script>
+{% endblock %}
+

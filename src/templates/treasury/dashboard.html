@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+
+{% block title %}الخزنة - BroMan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-safe text-success"></i>
+                إدارة الخزنة
+            </h1>
+            <div class="d-flex gap-2">
+                {% if current_user.has_permission('create_transactions') %}
+                <a href="/treasury/transactions/new" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    إضافة معاملة
+                </a>
+                {% endif %}
+                {% if current_user.has_permission('manage_treasury') %}
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#setBalanceModal">
+                    <i class="bi bi-gear"></i>
+                    تعديل الرصيد
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">الرصيد الحالي</h6>
+                        <h3 class="mb-0" id="currentBalance">0.00 جنيه</h3>
+                    </div>
+                    <i class="bi bi-wallet2 display-6"></i>
+                </div>
+                <small class="opacity-75" id="lastUpdated">آخر تحديث: -</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">إيرادات اليوم</h6>
+                        <h3 class="mb-0" id="todayIncome">0.00 جنيه</h3>
+                    </div>
+                    <i class="bi bi-arrow-up-circle display-6"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">مصروفات اليوم</h6>
+                        <h3 class="mb-0" id="todayExpenses">0.00 جنيه</h3>
+                    </div>
+                    <i class="bi bi-arrow-down-circle display-6"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">صافي الشهر</h6>
+                        <h3 class="mb-0" id="monthNet">0.00 جنيه</h3>
+                    </div>
+                    <i class="bi bi-graph-up display-6"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up"></i>
+                    تطور الرصيد (آخر 30 يوم)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="balanceChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pie-chart"></i>
+                    أنواع المعاملات (هذا الشهر)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="transactionTypesChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        المعاملات الأخيرة
+                    </h5>
+                    <a href="/treasury/transactions" class="btn btn-outline-primary btn-sm">
+                        عرض الكل
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentTransactionsTable">
+                        <thead>
+                            <tr>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>الوصف</th>
+                                <th>التاريخ</th>
+                                <th>المستخدم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentTransactionsBody">
+                            <!-- Recent transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Set Balance Modal -->
+{% if current_user.has_permission('manage_treasury') %}
+<div class="modal fade" id="setBalanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تعديل رصيد الخزنة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="setBalanceForm">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>تحذير:</strong> تعديل الرصيد سيؤثر على جميع التقارير المالية. يرجى التأكد من صحة المبلغ.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newBalance" class="form-label">الرصيد الجديد (جنيه)</label>
+                        <input type="number" class="form-control" id="newBalance" name="balance" 
+                               step="0.01" required>
+                        <div class="form-text">الرصيد الحالي: <span id="currentBalanceText">0.00 جنيه</span></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="balanceReason" class="form-label">سبب التعديل</label>
+                        <textarea class="form-control" id="balanceReason" name="reason" rows="3" 
+                                  placeholder="اذكر سبب تعديل الرصيد..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning">تحديث الرصيد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let balanceChart, transactionTypesChart;
+let treasuryStats = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTreasuryStats();
+    
+    {% if current_user.has_permission('manage_treasury') %}
+    // Setup set balance form
+    document.getElementById('setBalanceForm').addEventListener('submit', handleSetBalance);
+    {% endif %}
+});
+
+async function loadTreasuryStats() {
+    try {
+        showLoading();
+        
+        const response = await fetch('/treasury/api/treasury-stats');
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        treasuryStats = data;
+        updateDashboard(data);
+        
+    } catch (error) {
+        console.error('Error loading treasury stats:', error);
+        showError('حدث خطأ في تحميل إحصائيات الخزنة');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateDashboard(data) {
+    // Update balance cards
+    document.getElementById('currentBalance').textContent = formatCurrency(data.current_balance);
+    document.getElementById('todayIncome').textContent = formatCurrency(data.today_income);
+    document.getElementById('todayExpenses').textContent = formatCurrency(data.today_expenses);
+    
+    const monthNet = data.month_income - data.month_expenses;
+    document.getElementById('monthNet').textContent = formatCurrency(monthNet);
+    document.getElementById('monthNet').className = monthNet >= 0 ? 'mb-0 text-success' : 'mb-0 text-danger';
+    
+    // Update last updated time
+    if (data.last_updated) {
+        const lastUpdated = new Date(data.last_updated);
+        document.getElementById('lastUpdated').textContent = 
+            `آخر تحديث: ${lastUpdated.toLocaleString('ar-EG')}`;
+    }
+    
+    // Update current balance in modal
+    {% if current_user.has_permission('manage_treasury') %}
+    document.getElementById('currentBalanceText').textContent = formatCurrency(data.current_balance);
+    {% endif %}
+    
+    // Update recent transactions
+    updateRecentTransactions(data.recent_transactions);
+    
+    // Update charts
+    updateBalanceChart(data.monthly_balances);
+    updateTransactionTypesChart(data.type_summary);
+}
+
+function updateRecentTransactions(transactions) {
+    const tbody = document.getElementById('recentTransactionsBody');
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">لا توجد معاملات حديثة</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td><span class="badge bg-secondary">${transaction.type}</span></td>
+            <td class="${transaction.amount >= 0 ? 'text-success' : 'text-danger'}">
+                ${formatCurrency(transaction.amount)}
+            </td>
+            <td>${transaction.description}</td>
+            <td>${formatDate(transaction.transaction_date)}</td>
+            <td>${transaction.created_by_name || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function updateBalanceChart(monthlyBalances) {
+    const ctx = document.getElementById('balanceChart').getContext('2d');
+    
+    if (balanceChart) {
+        balanceChart.destroy();
+    }
+    
+    balanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: monthlyBalances.map(item => item.month),
+            datasets: [{
+                label: 'الرصيد',
+                data: monthlyBalances.map(item => item.balance),
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+}
+
+function updateTransactionTypesChart(typeSummary) {
+    const ctx = document.getElementById('transactionTypesChart').getContext('2d');
+    
+    if (transactionTypesChart) {
+        transactionTypesChart.destroy();
+    }
+    
+    // Filter and prepare data
+    const positiveTypes = typeSummary.filter(item => item.total > 0);
+    const negativeTypes = typeSummary.filter(item => item.total < 0);
+    
+    const labels = [...positiveTypes.map(item => item.type), ...negativeTypes.map(item => item.type)];
+    const data = [...positiveTypes.map(item => item.total), ...negativeTypes.map(item => Math.abs(item.total))];
+    const colors = [
+        ...positiveTypes.map(() => 'rgba(40, 167, 69, 0.8)'),
+        ...negativeTypes.map(() => 'rgba(220, 53, 69, 0.8)')
+    ];
+    
+    transactionTypesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 10
+                    }
+                }
+            }
+        }
+    });
+}
+
+{% if current_user.has_permission('manage_treasury') %}
+async function handleSetBalance(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        showLoading(submitButton, 'جاري التحديث...');
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        const response = await fetch('/treasury/api/balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            showError(result.error);
+            return;
+        }
+        
+        showAlert(result.message, 'success');
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('setBalanceModal'));
+        modal.hide();
+        
+        // Reload stats
+        loadTreasuryStats();
+        
+        // Reset form
+        form.reset();
+        
+    } catch (error) {
+        console.error('Error setting balance:', error);
+        showError('حدث خطأ في تحديث الرصيد');
+    } finally {
+        hideLoading(submitButton);
+        submitButton.innerHTML = originalText;
+    }
+}
+{% endif %}
+
+function showLoading() {
+    document.getElementById('loadingSpinner').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+</script>
+{% endblock %}
+

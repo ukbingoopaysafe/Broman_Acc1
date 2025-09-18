@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %} - BroMan
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-house-door text-primary"></i>
+                {% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %}
+            </h1>
+            <a href="/sales" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+                العودة للقائمة
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-form-check"></i>
+                    بيانات المعاملة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="saleForm" novalidate>
+                    {% if sale %}
+                    <input type="hidden" id="saleId" value="{{ sale.id }}">
+                    {% endif %}
+                    
+                    <!-- Client and Unit Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">معلومات العميل والوحدة</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="client_name" class="form-label">اسم العميل <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" 
+                                   value="{% if sale %}{{ sale.client_name }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال اسم العميل</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unit_code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="unit_code" name="unit_code" 
+                                   value="{% if sale %}{{ sale.unit_code }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال كود الوحدة</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="project_name" class="form-label">اسم المشروع <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" 
+                                   value="{% if sale %}{{ sale.project_name }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال اسم المشروع</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="property_type" class="form-label">نوع العقار <span class="text-danger">*</span></label>
+                            <select class="form-select" id="property_type" name="property_type" required>
+                                <option value="">اختر نوع العقار</option>
+                            </select>
+                            <div class="invalid-feedback">يرجى اختيار نوع العقار</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="unit_price" class="form-label">سعر الوحدة (جنيه) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                   value="{% if sale %}{{ sale.unit_price }}{% endif %}" 
+                                   step="0.01" min="0" required>
+                            <div class="invalid-feedback">يرجى إدخال سعر الوحدة</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sale_date" class="form-label">تاريخ البيع <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                   value="{% if sale %}{{ sale.sale_date }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال تاريخ البيع</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sales Team Information -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h6 class="text-info border-bottom pb-2">معلومات فريق المبيعات</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="salesperson_name" class="form-label">مندوب المبيعات</label>
+                            <input type="text" class="form-control" id="salesperson_name" name="salesperson_name" 
+                                   value="{% if sale %}{{ sale.salesperson_name }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sales_manager_name" class="form-label">مدير المبيعات</label>
+                            <input type="text" class="form-control" id="sales_manager_name" name="sales_manager_name" 
+                                   value="{% if sale %}{{ sale.sales_manager_name }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="notes" class="form-label">ملاحظات</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{% if sale %}{{ sale.notes }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Calculations Preview -->
+                    <div class="row mb-4 mt-4" id="calculationsPreview" style="display: none;">
+                        <div class="col-12">
+                            <h6 class="text-success border-bottom pb-2">معاينة الحسابات المالية</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr><td><strong>عمولة الشركة:</strong></td><td id="preview_company_commission">-</td></tr>
+                                <tr><td><strong>عمولة المندوب:</strong></td><td id="preview_salesperson_commission">-</td></tr>
+                                <tr><td><strong>حافز المندوب:</strong></td><td id="preview_salesperson_incentive">-</td></tr>
+                                <tr><td><strong>ضريبة الحافز الإضافي:</strong></td><td id="preview_additional_incentive_tax">-</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr><td><strong>ضريبة القيمة المضافة:</strong></td><td id="preview_vat_amount">-</td></tr>
+                                <tr><td><strong>ضريبة المبيعات:</strong></td><td id="preview_sales_tax">-</td></tr>
+                                <tr><td><strong>الضريبة السنوية:</strong></td><td id="preview_annual_tax">-</td></tr>
+                                <tr><td><strong>عمولة مدير المبيعات:</strong></td><td id="preview_sales_manager_commission">-</td></tr>
+                                <tr class="table-success"><td><strong>صافي دخل الشركة:</strong></td><td id="preview_net_company_income"><strong>-</strong></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-primary" onclick="calculatePreview()">
+                                    <i class="bi bi-calculator"></i>
+                                    معاينة الحسابات
+                                </button>
+                                <div>
+                                    <a href="/sales" class="btn btn-secondary me-2">إلغاء</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i>
+                                        {% if sale %}تحديث المعاملة{% else %}حفظ المعاملة{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let propertyTypes = [];
+let currentSale = {% if sale %}{{ sale.to_dict() | tojson }}{% else %}null{% endif %};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadPropertyTypes();
+    
+    // Setup form validation
+    const form = document.getElementById('saleForm');
+    form.addEventListener('submit', handleFormSubmit);
+    
+    // Auto-calculate on property type or price change
+    document.getElementById('property_type').addEventListener('change', calculatePreview);
+    document.getElementById('unit_price').addEventListener('input', debounce(calculatePreview, 500));
+    
+    // Set default date to today if creating new sale
+    if (!currentSale) {
+        document.getElementById('sale_date').value = new Date().toISOString().split('T')[0];
+    }
+});
+
+async function loadPropertyTypes() {
+    try {
+        const response = await fetch('/sales/api/property-types');
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        propertyTypes = data;
+        const select = document.getElementById('property_type');
+        
+        data.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.property_type;
+            option.textContent = type.property_type;
+            select.appendChild(option);
+        });
+        
+        // Set current value if editing
+        if (currentSale) {
+            select.value = currentSale.property_type;
+            calculatePreview();
+        }
+        
+    } catch (error) {
+        console.error('Error loading property types:', error);
+        showError('حدث خطأ في تحميل أنواع العقارات');
+    }
+}
+
+function calculatePreview() {
+    const propertyType = document.getElementById('property_type').value;
+    const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+    
+    if (!propertyType || unitPrice <= 0) {
+        document.getElementById('calculationsPreview').style.display = 'none';
+        return;
+    }
+    
+    const rates = propertyTypes.find(type => type.property_type === propertyType);
+    if (!rates) {
+        document.getElementById('calculationsPreview').style.display = 'none';
+        return;
+    }
+    
+    // Calculate all amounts
+    const companyCommission = unitPrice * rates.company_commission_rate;
+    const salespersonCommission = unitPrice * rates.salesperson_commission_rate;
+    const salespersonIncentive = unitPrice * rates.salesperson_incentive_rate;
+    const additionalIncentiveTax = salespersonIncentive * rates.additional_incentive_tax_rate;
+    const vatAmount = companyCommission * rates.vat_rate;
+    const salesTax = companyCommission * rates.sales_tax_rate;
+    const annualTax = companyCommission * rates.annual_tax_rate;
+    const salesManagerCommission = unitPrice * rates.sales_manager_commission_rate;
+    
+    const netCompanyIncome = companyCommission - vatAmount - salesTax - annualTax - 
+                           salespersonCommission - salespersonIncentive - 
+                           additionalIncentiveTax - salesManagerCommission;
+    
+    // Update preview
+    document.getElementById('preview_company_commission').textContent = formatCurrency(companyCommission);
+    document.getElementById('preview_salesperson_commission').textContent = formatCurrency(salespersonCommission);
+    document.getElementById('preview_salesperson_incentive').textContent = formatCurrency(salespersonIncentive);
+    document.getElementById('preview_additional_incentive_tax').textContent = formatCurrency(additionalIncentiveTax);
+    document.getElementById('preview_vat_amount').textContent = formatCurrency(vatAmount);
+    document.getElementById('preview_sales_tax').textContent = formatCurrency(salesTax);
+    document.getElementById('preview_annual_tax').textContent = formatCurrency(annualTax);
+    document.getElementById('preview_sales_manager_commission').textContent = formatCurrency(salesManagerCommission);
+    document.getElementById('preview_net_company_income').innerHTML = `<strong>${formatCurrency(netCompanyIncome)}</strong>`;
+    
+    // Show preview
+    document.getElementById('calculationsPreview').style.display = 'block';
+}
+
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        showLoading(submitButton, 'جاري الحفظ...');
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        const url = currentSale ? `/sales/api/sales/${currentSale.id}` : '/sales/api/sales';
+        const method = currentSale ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            showError(result.error);
+            return;
+        }
+        
+        showAlert(result.message, 'success');
+        
+        // Redirect to sales list after a short delay
+        setTimeout(() => {
+            window.location.href = '/sales';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error saving sale:', error);
+        showError('حدث خطأ في حفظ المعاملة');
+    } finally {
+        hideLoading(submitButton);
+        submitButton.innerHTML = originalText;
+    }
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+</script>
+{% endblock %}
+

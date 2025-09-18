@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - BroMan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-speedometer2 text-primary"></i>
+                لوحة التحكم
+            </h1>
+            <div class="text-muted">
+                <i class="bi bi-calendar3"></i>
+                <span id="currentDate"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4" id="statsCards">
+    <!-- Cards will be loaded dynamically -->
+</div>
+
+<!-- Charts and Recent Activity -->
+<div class="row">
+    <!-- Monthly Sales Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up text-success"></i>
+                    المبيعات الشهرية
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlySalesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Transactions -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history text-info"></i>
+                    المعاملات الأخيرة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recentTransactions" class="list-group list-group-flush">
+                    <!-- Transactions will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sales -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-house-door text-warning"></i>
+                    المبيعات الأخيرة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentSalesTable">
+                        <thead>
+                            <tr>
+                                <th>العميل</th>
+                                <th>كود الوحدة</th>
+                                <th>نوع العقار</th>
+                                <th>السعر</th>
+                                <th>تاريخ البيع</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentSalesBody">
+                            <!-- Sales will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+    <p class="mt-2 text-muted">جاري تحميل البيانات...</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set current date
+    const currentDate = new Date().toLocaleDateString('ar-EG', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    document.getElementById('currentDate').textContent = currentDate;
+    
+    // Load dashboard data
+    loadDashboardStats();
+});
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/dashboard/api/dashboard-stats');
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        // Hide loading spinner
+        document.getElementById('loadingSpinner').style.display = 'none';
+        
+        // Render statistics cards
+        renderStatsCards(data);
+        
+        // Render monthly sales chart
+        renderMonthlySalesChart(data.monthly_sales);
+        
+        // Render recent transactions
+        renderRecentTransactions(data.recent_transactions);
+        
+        // Render recent sales
+        renderRecentSales(data.recent_sales);
+        
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        showError('حدث خطأ في تحميل بيانات لوحة التحكم');
+    }
+}
+
+function renderStatsCards(data) {
+    const statsCards = document.getElementById('statsCards');
+    
+    const cards = [
+        {
+            title: 'رصيد الخزنة',
+            value: formatCurrency(data.treasury_balance),
+            icon: 'bi-safe',
+            color: 'primary',
+            change: null
+        },
+        {
+            title: 'إجمالي المبيعات',
+            value: data.total_sales.toLocaleString('ar-EG'),
+            icon: 'bi-house-door',
+            color: 'success',
+            change: null
+        },
+        {
+            title: 'مبيعات هذا الشهر',
+            value: data.sales_this_month.toLocaleString('ar-EG'),
+            icon: 'bi-calendar-month',
+            color: 'info',
+            change: null
+        },
+        {
+            title: 'إجمالي الإيرادات',
+            value: formatCurrency(data.total_revenue),
+            icon: 'bi-graph-up',
+            color: 'warning',
+            change: null
+        }
+    ];
+    
+    statsCards.innerHTML = cards.map(card => `
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-${card.color} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-${card.color} text-uppercase mb-1">
+                                ${card.title}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                ${card.value}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi ${card.icon} fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderMonthlySalesChart(monthlyData) {
+    const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+    
+    const labels = monthlyData.map(item => {
+        const [year, month] = item.month.split('-');
+        return new Date(year, month - 1).toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+    });
+    
+    const salesData = monthlyData.map(item => item.count);
+    const revenueData = monthlyData.map(item => item.revenue);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'عدد المبيعات',
+                data: salesData,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }, {
+                label: 'الإيرادات',
+                data: revenueData,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+}
+
+function renderRecentTransactions(transactions) {
+    const container = document.getElementById('recentTransactions');
+    
+    if (transactions.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">لا توجد معاملات حديثة</p>';
+        return;
+    }
+    
+    container.innerHTML = transactions.map(transaction => `
+        <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">${transaction.type}</h6>
+                <small class="text-${transaction.amount >= 0 ? 'success' : 'danger'}">
+                    ${formatCurrency(transaction.amount)}
+                </small>
+            </div>
+            <p class="mb-1 small">${transaction.description || 'لا يوجد وصف'}</p>
+            <small class="text-muted">${formatDate(transaction.transaction_date)}</small>
+        </div>
+    `).join('');
+}
+
+function renderRecentSales(sales) {
+    const tbody = document.getElementById('recentSalesBody');
+    
+    if (sales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">لا توجد مبيعات حديثة</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = sales.map(sale => `
+        <tr>
+            <td>${sale.client_name}</td>
+            <td><code>${sale.unit_code}</code></td>
+            <td><span class="badge bg-secondary">${sale.property_type}</span></td>
+            <td>${formatCurrency(sale.unit_price)}</td>
+            <td>${formatDate(sale.sale_date)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewSale(${sale.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('ar-EG', {
+        style: 'currency',
+        currency: 'EGP'
+    }).format(amount);
+}
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('ar-EG');
+}
+
+function showError(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('main').insertBefore(alert, document.querySelector('main').firstChild);
+}
+
+function viewSale(saleId) {
+    // Redirect to sale details page
+    window.location.href = `/sales/${saleId}`;
+}
+</script>
+{% endblock %}
+

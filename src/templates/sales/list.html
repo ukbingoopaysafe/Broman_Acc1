@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}معاملات البيع - BroMan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-house-door text-primary"></i>
+                معاملات البيع
+            </h1>
+            {% if current_user.has_permission('create_sales') %}
+            <a href="/sales/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                إضافة معاملة جديدة
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filtersForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">البحث</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="اسم العميل، كود الوحدة، أو المشروع">
+            </div>
+            <div class="col-md-2">
+                <label for="property_type" class="form-label">نوع العقار</label>
+                <select class="form-select" id="property_type" name="property_type">
+                    <option value="">جميع الأنواع</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">من تاريخ</label>
+                <input type="date" class="form-control" id="date_from" name="date_from">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">إلى تاريخ</label>
+                <input type="date" class="form-control" id="date_to" name="date_to">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                        بحث
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                        مسح
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sales Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">قائمة المعاملات</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    تصدير Excel
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="printTable()">
+                    <i class="bi bi-printer"></i>
+                    طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="salesTable">
+                <thead>
+                    <tr>
+                        <th>كود الوحدة</th>
+                        <th>العميل</th>
+                        <th>المشروع</th>
+                        <th>نوع العقار</th>
+                        <th>سعر الوحدة</th>
+                        <th>عمولة الشركة</th>
+                        <th>صافي الدخل</th>
+                        <th>تاريخ البيع</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTableBody">
+                    <!-- Sales will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Sales pagination" id="paginationContainer" style="display: none;">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Pagination will be loaded dynamically -->
+            </ul>
+        </nav>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+            <p class="mt-2 text-muted">جاري تحميل المعاملات...</p>
+        </div>
+        
+        <!-- No Data Message -->
+        <div id="noDataMessage" class="text-center py-5" style="display: none;">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <h5 class="mt-3 text-muted">لا توجد معاملات</h5>
+            <p class="text-muted">لم يتم العثور على معاملات بيع بالمعايير المحددة</p>
+        </div>
+    </div>
+</div>
+
+<!-- Sale Detail Modal -->
+<div class="modal fade" id="saleDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل المعاملة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="saleDetailContent">
+                <!-- Sale details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <div id="saleDetailActions">
+                    <!-- Action buttons will be added here based on permissions -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentFilters = {};
+let salesData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadPropertyTypes();
+    loadSales();
+    
+    // Setup filters form
+    document.getElementById('filtersForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        currentPage = 1;
+        loadSales();
+    });
+});
+
+async function loadPropertyTypes() {
+    try {
+        const response = await fetch('/sales/api/property-types');
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error loading property types:', data.error);
+            return;
+        }
+        
+        const select = document.getElementById('property_type');
+        data.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.property_type;
+            option.textContent = type.property_type;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error loading property types:', error);
+    }
+}
+
+async function loadSales() {
+    try {
+        showLoading();
+        
+        // Get filter values
+        const formData = new FormData(document.getElementById('filtersForm'));
+        const filters = Object.fromEntries(formData);
+        
+        // Add pagination
+        filters.page = currentPage;
+        filters.per_page = 25;
+        
+        currentFilters = filters;
+        
+        const queryString = new URLSearchParams(filters).toString();
+        const response = await fetch(`/sales/api/sales?${queryString}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        salesData = data.sales;
+        renderSalesTable(data.sales);
+        renderPagination(data);
+        
+    } catch (error) {
+        console.error('Error loading sales:', error);
+        showError('حدث خطأ في تحميل المعاملات');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderSalesTable(sales) {
+    const tbody = document.getElementById('salesTableBody');
+    
+    if (sales.length === 0) {
+        document.getElementById('noDataMessage').style.display = 'block';
+        document.getElementById('paginationContainer').style.display = 'none';
+        tbody.innerHTML = '';
+        return;
+    }
+    
+    document.getElementById('noDataMessage').style.display = 'none';
+    
+    tbody.innerHTML = sales.map(sale => `
+        <tr>
+            <td><code>${sale.unit_code}</code></td>
+            <td>${sale.client_name}</td>
+            <td>${sale.project_name}</td>
+            <td><span class="badge bg-secondary">${sale.property_type}</span></td>
+            <td>${formatCurrency(sale.unit_price)}</td>
+            <td>${formatCurrency(sale.company_commission)}</td>
+            <td class="${sale.net_company_income >= 0 ? 'text-success' : 'text-danger'}">
+                ${formatCurrency(sale.net_company_income)}
+            </td>
+            <td>${formatDate(sale.sale_date)}</td>
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-primary" onclick="viewSale(${sale.id})" title="عرض">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${hasPermission('edit_sales') ? `
+                    <a href="/sales/${sale.id}/edit" class="btn btn-outline-warning" title="تعديل">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    ` : ''}
+                    ${hasPermission('delete_sales') ? `
+                    <button class="btn btn-outline-danger" onclick="deleteSale(${sale.id})" title="حذف">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderPagination(data) {
+    if (data.pages <= 1) {
+        document.getElementById('paginationContainer').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('paginationContainer').style.display = 'block';
+    
+    const pagination = document.getElementById('pagination');
+    let paginationHTML = '';
+    
+    // Previous button
+    if (data.has_prev) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${data.current_page - 1})">السابق</a>
+            </li>
+        `;
+    }
+    
+    // Page numbers
+    const startPage = Math.max(1, data.current_page - 2);
+    const endPage = Math.min(data.pages, data.current_page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    if (data.has_next) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${data.current_page + 1})">التالي</a>
+            </li>
+        `;
+    }
+    
+    pagination.innerHTML = paginationHTML;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadSales();
+}
+
+async function viewSale(saleId) {
+    try {
+        const response = await fetch(`/sales/api/sales/${saleId}`);
+        const sale = await response.json();
+        
+        if (sale.error) {
+            showError(sale.error);
+            return;
+        }
+        
+        renderSaleDetail(sale);
+        
+        const modal = new bootstrap.Modal(document.getElementById('saleDetailModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error loading sale details:', error);
+        showError('حدث خطأ في تحميل تفاصيل المعاملة');
+    }
+}
+
+function renderSaleDetail(sale) {
+    const content = document.getElementById('saleDetailContent');
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">معلومات العميل والوحدة</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>العميل:</strong></td><td>${sale.client_name}</td></tr>
+                    <tr><td><strong>كود الوحدة:</strong></td><td><code>${sale.unit_code}</code></td></tr>
+                    <tr><td><strong>المشروع:</strong></td><td>${sale.project_name}</td></tr>
+                    <tr><td><strong>نوع العقار:</strong></td><td><span class="badge bg-secondary">${sale.property_type}</span></td></tr>
+                    <tr><td><strong>سعر الوحدة:</strong></td><td>${formatCurrency(sale.unit_price)}</td></tr>
+                    <tr><td><strong>تاريخ البيع:</strong></td><td>${formatDate(sale.sale_date)}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">المعلومات المالية</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>عمولة الشركة:</strong></td><td>${formatCurrency(sale.company_commission)}</td></tr>
+                    <tr><td><strong>عمولة المندوب:</strong></td><td>${formatCurrency(sale.salesperson_commission)}</td></tr>
+                    <tr><td><strong>حافز المندوب:</strong></td><td>${formatCurrency(sale.salesperson_incentive)}</td></tr>
+                    <tr><td><strong>ضريبة القيمة المضافة:</strong></td><td>${formatCurrency(sale.vat_amount)}</td></tr>
+                    <tr><td><strong>ضريبة المبيعات:</strong></td><td>${formatCurrency(sale.sales_tax)}</td></tr>
+                    <tr><td><strong>الضريبة السنوية:</strong></td><td>${formatCurrency(sale.annual_tax)}</td></tr>
+                    <tr class="table-success"><td><strong>صافي دخل الشركة:</strong></td><td><strong>${formatCurrency(sale.net_company_income)}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+        ${sale.salesperson_name ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-info">معلومات إضافية</h6>
+                <p><strong>مندوب المبيعات:</strong> ${sale.salesperson_name}</p>
+                ${sale.sales_manager_name ? `<p><strong>مدير المبيعات:</strong> ${sale.sales_manager_name}</p>` : ''}
+                ${sale.notes ? `<p><strong>ملاحظات:</strong> ${sale.notes}</p>` : ''}
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    // Add action buttons
+    const actions = document.getElementById('saleDetailActions');
+    let actionsHTML = '';
+    
+    if (hasPermission('edit_sales')) {
+        actionsHTML += `<a href="/sales/${sale.id}/edit" class="btn btn-warning">تعديل</a>`;
+    }
+    
+    if (hasPermission('delete_sales')) {
+        actionsHTML += `<button class="btn btn-danger ms-2" onclick="deleteSale(${sale.id})">حذف</button>`;
+    }
+    
+    actions.innerHTML = actionsHTML;
+}
+
+async function deleteSale(saleId) {
+    if (!confirm('هل أنت متأكد من حذف هذه المعاملة؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/sales/api/sales/${saleId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        showAlert(data.message, 'success');
+        
+        // Close modal if open
+        const modal = bootstrap.Modal.getInstance(document.getElementById('saleDetailModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Reload sales
+        loadSales();
+        
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+        showError('حدث خطأ في حذف المعاملة');
+    }
+}
+
+function clearFilters() {
+    document.getElementById('filtersForm').reset();
+    currentPage = 1;
+    loadSales();
+}
+
+function exportToExcel() {
+    if (salesData.length === 0) {
+        showAlert('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+    
+    // Prepare data for export
+    const exportData = salesData.map(sale => ({
+        'كود الوحدة': sale.unit_code,
+        'العميل': sale.client_name,
+        'المشروع': sale.project_name,
+        'نوع العقار': sale.property_type,
+        'سعر الوحدة': sale.unit_price,
+        'عمولة الشركة': sale.company_commission,
+        'صافي الدخل': sale.net_company_income,
+        'تاريخ البيع': sale.sale_date,
+        'مندوب المبيعات': sale.salesperson_name || '',
+        'ملاحظات': sale.notes || ''
+    }));
+    
+    exportToCSV(exportData, 'معاملات_البيع_' + new Date().toISOString().split('T')[0]);
+}
+
+function printTable() {
+    printElement('salesTable');
+}
+
+function showLoading() {
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('salesTableBody').innerHTML = '';
+    document.getElementById('noDataMessage').style.display = 'none';
+    document.getElementById('paginationContainer').style.display = 'none';
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+function hasPermission(permission) {
+    return userPermissions.includes(permission) || (currentUser && currentUser.role && currentUser.role.name === 'Admin');
+}
+</script>
+{% endblock %}
+
