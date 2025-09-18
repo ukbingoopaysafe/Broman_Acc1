@@ -2,7 +2,7 @@
 
 /* RTL Support */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Tajawal', 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
 }
 
@@ -210,26 +210,9 @@ body {
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1a1a1a;
-        color: #ffffff;
-    }
-    
-    .card {
-        background-color: #2d2d2d;
-        color: #ffffff;
-    }
-    
-    .table {
-        color: #ffffff;
-    }
-    
-    .table thead th {
-        background-color: #3d3d3d;
-        color: #ffffff;
-    }
+/* Light theme enforced regardless of OS preference */
+:root {
+    color-scheme: light;
 }
 
 /* Animation Classes */

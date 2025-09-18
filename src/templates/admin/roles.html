@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}إدارة الأدوار والصلاحيات{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0"><i class="bi bi-shield-lock me-2"></i>الأدوار والصلاحيات</h3>
+    <button class="btn btn-primary" onclick="openCreateRole()"><i class="bi bi-plus-circle"></i> دور جديد</button>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3">الأدوار</h6>
+          <ul class="list-group" id="rolesList"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3">صلاحيات الدور: <span id="currentRoleName" class="text-primary"></span></h6>
+          <div id="permissionsContainer" class="row row-cols-1 row-cols-sm-2"></div>
+          <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" onclick="saveRolePermissions()">حفظ الصلاحيات</button>
+            <button class="btn btn-outline-danger" onclick="deleteRole()">حذف الدور</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create role modal -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">دور جديد</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">اسم الدور</label>
+          <input type="text" id="roleName" class="form-control" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">الوصف</label>
+          <textarea id="roleDesc" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button class="btn btn-primary" onclick="createRole()">إنشاء</button>
+      </div>
+    </div>
+  </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let roles = [];
+let permissions = [];
+let selectedRoleId = null;
+
+async function fetchJSON(url, options) {
+  const res = await fetch(url, options || {});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function loadRolesAndPermissions() {
+  roles = await fetchJSON('/api/roles');
+  permissions = await fetchJSON('/api/permissions');
+  renderRoles();
+  if (roles.length) selectRole(roles[0].id);
+}
+
+function renderRoles() {
+  const list = document.getElementById('rolesList');
+  list.innerHTML = roles.map(r => `
+    <li class="list-group-item d-flex justify-content-between align-items-center ${selectedRoleId===r.id?'active text-white':''}" style="cursor:pointer" onclick="selectRole(${r.id})">
+      <span>${r.name}</span>
+      <span class="badge bg-secondary">${(r.permissions||[]).length}</span>
+    </li>
+  `).join('');
+}
+
+function selectRole(id) {
+  selectedRoleId = id;
+  const role = roles.find(x => x.id === id);
+  document.getElementById('currentRoleName').textContent = role.name;
+  renderRoles();
+  const selected = new Set((role.permissions||[]).map(p => p.id));
+  const container = document.getElementById('permissionsContainer');
+  container.innerHTML = permissions.map(p => `
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="perm_${p.id}" ${selected.has(p.id)?'checked':''} />
+      <label class="form-check-label" for="perm_${p.id}">${p.name}</label>
+    </div>
+  `).join('');
+}
+
+async function saveRolePermissions() {
+  if (!selectedRoleId) return;
+  const checked = Array.from(document.querySelectorAll('#permissionsContainer input[type="checkbox"]:checked')).map(i => parseInt(i.id.replace('perm_', ''), 10));
+  await fetchJSON(`/api/roles/${selectedRoleId}/permissions`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ permission_ids: checked })
+  });
+  await loadRolesAndPermissions();
+  selectRole(selectedRoleId);
+}
+
+function openCreateRole() {
+  document.getElementById('roleName').value = '';
+  document.getElementById('roleDesc').value = '';
+  new bootstrap.Modal(document.getElementById('roleModal')).show();
+}
+
+async function createRole() {
+  const name = document.getElementById('roleName').value.trim();
+  const description = document.getElementById('roleDesc').value.trim();
+  if (!name) return alert('ادخل اسم الدور');
+  await fetchJSON('/api/users', { method: 'GET' }); // no-op to keep session alive
+  // Create via SQLAlchemy session using a small API shim if needed in المستقبل.
+  // حالياً لا يوجد endpoint لإنشاء الأدوار؛ سننشئه لاحقاً إذا رغبت.
+  alert('لا يوجد Endpoint لإنشاء الأدوار حالياً. يمكنني إضافته لك لو تحب.');
+}
+
+async function deleteRole() {
+  alert('لا يوجد Endpoint لحذف الأدوار حالياً. يمكنني إضافته لك لو تحب.');
+}
+
+loadRolesAndPermissions();
+</script>
+{% endblock %}
+
+

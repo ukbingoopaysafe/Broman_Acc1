@@ -5,6 +5,9 @@ from src.models.user import User, Role, Permission
 
 user_bp = Blueprint('user', __name__)
 
+# Pages blueprint (no url prefix) for admin UI
+admin_pages_bp = Blueprint('admin_pages', __name__)
+
 def require_permission(permission_name):
     """Decorator to require specific permission"""
     def decorator(f):
@@ -19,6 +22,19 @@ def require_permission(permission_name):
         decorated_function.__name__ = f.__name__
         return decorated_function
     return decorator
+
+# --------------------------- Admin Pages ---------------------------
+@admin_pages_bp.route('/users')
+@login_required
+@require_permission('manage_users')
+def users_page():
+    return jsonify({}) if request.is_json else __import__('flask').render_template('admin/users.html')
+
+@admin_pages_bp.route('/roles')
+@login_required
+@require_permission('manage_roles')
+def roles_page():
+    return jsonify({}) if request.is_json else __import__('flask').render_template('admin/roles.html')
 
 @user_bp.route('/users', methods=['GET'])
 @login_required

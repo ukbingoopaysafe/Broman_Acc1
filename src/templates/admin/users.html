@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}إدارة المستخدمين{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0"><i class="bi bi-people me-2"></i>المستخدمون</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+            <i class="bi bi-plus-circle"></i> مستخدم جديد
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>البريد</th>
+                            <th>الدور</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create/Edit User -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalTitle">مستخدم جديد</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="userForm">
+            <input type="hidden" id="userId" />
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم</label>
+                <input type="text" class="form-control" id="username" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">البريد الإلكتروني</label>
+                <input type="email" class="form-control" id="email" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">كلمة المرور</label>
+                <input type="password" class="form-control" id="password" />
+                <div class="form-text">اتركها فارغة عند التعديل بدون تغيير كلمة المرور</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">الدور</label>
+                <select id="role" class="form-select" required></select>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="is_active" checked />
+                <label class="form-check-label" for="is_active">حساب مفعل</label>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-primary" id="saveUserBtn">حفظ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function fetchJSON(url, options) {
+  const res = await fetch(url, options || {});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function loadRoles() {
+  const roles = await fetchJSON('/api/roles');
+  const sel = document.getElementById('role');
+  sel.innerHTML = roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+}
+
+async function loadUsers() {
+  const users = await fetchJSON('/api/users');
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.username}</td>
+      <td>${u.email}</td>
+      <td>${u.role ? u.role.name : ''}</td>
+      <td>${u.is_active ? 'مفعل' : 'معطل'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit(${u.id})"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="removeUser(${u.id})"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+function openCreate() {
+  document.getElementById('userModalTitle').textContent = 'مستخدم جديد';
+  document.getElementById('userId').value = '';
+  document.getElementById('username').value = '';
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('is_active').checked = true;
+  new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+async function openEdit(id) {
+  const u = await fetchJSON(`/api/users/${id}`);
+  document.getElementById('userModalTitle').textContent = 'تعديل مستخدم';
+  document.getElementById('userId').value = u.id;
+  document.getElementById('username').value = u.username;
+  document.getElementById('email').value = u.email;
+  document.getElementById('password').value = '';
+  document.getElementById('is_active').checked = !!u.is_active;
+  if (u.role) document.getElementById('role').value = u.role.id;
+  new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+async function saveUser() {
+  const id = document.getElementById('userId').value;
+  const payload = {
+    username: document.getElementById('username').value,
+    email: document.getElementById('email').value,
+    role_id: parseInt(document.getElementById('role').value, 10),
+    is_active: document.getElementById('is_active').checked
+  };
+  const pw = document.getElementById('password').value;
+  if (!id) payload.password = pw || 'Passw0rd!'; else if (pw) payload.password = pw;
+
+  if (!id) await fetchJSON('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  else await fetchJSON(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+  await loadUsers();
+}
+
+async function removeUser(id) {
+  if (!confirm('هل تريد حذف هذا المستخدم؟')) return;
+  await fetchJSON(`/api/users/${id}`, { method: 'DELETE' });
+  await loadUsers();
+}
+
+document.querySelector('[data-bs-target="#userModal"]').addEventListener('click', openCreate);
+document.getElementById('saveUserBtn').addEventListener('click', saveUser);
+
+(async function init() {
+  await loadRoles();
+  await loadUsers();
+})();
+</script>
+{% endblock %}
+
+
