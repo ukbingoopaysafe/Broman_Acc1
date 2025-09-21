@@ -262,108 +262,176 @@ body {
 }
 
 /* ===========================================
-   COMPANY LOGO STYLES - TRANSPARENT & PROFESSIONAL
+   COMPANY LOGO STYLES - ENHANCED VISIBILITY
    =========================================== */
 
-/* Navbar Logo - Transparent Container */
+/* Navbar Logo - Enhanced for Dark Background */
 .navbar-logo {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 12px;
     transition: all 0.3s ease;
+    /* Add subtle background for better visibility */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px;
 }
 
 .navbar-logo:hover {
     transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .navbar-logo-img {
-    width: 40px;
-    height: 40px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     transition: all 0.3s ease;
+    /* Enhanced visibility */
+    filter: brightness(1.2) contrast(1.1);
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
 }
 
 .navbar-logo-img:hover {
     transform: scale(1.1);
+    filter: brightness(1.3) contrast(1.2);
 }
 
-/* Footer Logo - Transparent Container */
+/* Footer Logo - Enhanced for Dark Background */
 .footer-logo {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Add subtle background for better visibility */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.footer-logo:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
 }
 
 .footer-logo-img {
-    width: 35px;
-    height: 35px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    /* Enhanced visibility */
+    filter: brightness(1.2) contrast(1.1);
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    transition: all 0.3s ease;
 }
 
-/* Login Page Logo - Transparent Container */
+.footer-logo-img:hover {
+    filter: brightness(1.3) contrast(1.2);
+}
+
+/* Login Page Logo - Enhanced for Light Background */
 .company-logo {
-    width: 120px;
-    height: 120px;
+    width: 130px;
+    height: 130px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
+    margin: 0 auto 25px;
     transition: all 0.3s ease;
+    /* Add subtle shadow for depth */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .company-logo:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .logo-img {
-    width: 120px;
-    height: 120px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     transition: all 0.3s ease;
+    /* Enhanced visibility */
+    filter: brightness(1.1) contrast(1.05);
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
 }
 
 .logo-img:hover {
     transform: scale(1.05);
+    filter: brightness(1.15) contrast(1.1);
 }
 
 /* Responsive Logo Adjustments */
 @media (max-width: 768px) {
     .navbar-logo {
-        width: 35px;
-        height: 35px;
+        width: 38px;
+        height: 38px;
         margin-right: 10px;
+        padding: 5px;
     }
     
     .navbar-logo-img {
-        width: 35px;
-        height: 35px;
+        width: 100%;
+        height: 100%;
     }
     
     .footer-logo {
-        width: 30px;
-        height: 30px;
+        width: 35px;
+        height: 35px;
+        padding: 4px;
     }
     
     .footer-logo-img {
-        width: 30px;
-        height: 30px;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .company-logo {
+        width: 110px;
+        height: 110px;
+        margin-bottom: 20px;
+        padding: 8px;
+    }
+    
+    .logo-img {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar-logo {
+        width: 35px;
+        height: 35px;
+        margin-right: 8px;
+        padding: 4px;
+    }
+    
+    .footer-logo {
+        width: 32px;
+        height: 32px;
+        padding: 3px;
     }
     
     .company-logo {
         width: 100px;
         height: 100px;
         margin-bottom: 15px;
-    }
-    
-    .logo-img {
-        width: 100px;
-        height: 100px;
+        padding: 6px;
     }
 }
 
