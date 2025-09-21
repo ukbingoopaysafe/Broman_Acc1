@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3">
+            <h1 class="h3 dashboard-title">
                 <i class="bi bi-speedometer2 text-primary"></i>
                 لوحة التحكم
             </h1>
@@ -184,19 +184,21 @@ function renderStatsCards(data) {
     
     statsCards.innerHTML = cards.map(card => `
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-${card.color} shadow h-100 py-2">
+            <div class="card border-left-${card.color} stats-card shadow h-100 py-2 fade-in">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-${card.color} text-uppercase mb-1">
+                            <div class="stats-label text-${card.color} mb-1">
                                 ${card.title}
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <div class="stats-value mb-0">
                                 ${card.value}
                             </div>
                         </div>
                         <div class="col-auto">
-                            <i class="bi ${card.icon} fa-2x text-gray-300"></i>
+                            <div class="stats-icon ${card.color}">
+                                <i class="bi ${card.icon}"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -229,15 +231,25 @@ function renderMonthlySalesChart(monthlyData) {
             datasets: [{
                 label: 'عدد المبيعات',
                 data: salesData,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.1
+                borderColor: '#1e3a8a',
+                backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#d4af37',
+                pointBorderColor: '#1e3a8a',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                tension: 0.4
             }, {
                 label: 'الإيرادات',
                 data: revenueData,
-                borderColor: 'rgb(255, 99, 132)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                tension: 0.1,
+                borderColor: '#d4af37',
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#1e3a8a',
+                pointBorderColor: '#d4af37',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                tension: 0.4,
                 yAxisID: 'y1'
             }]
         },
@@ -246,13 +258,44 @@ function renderMonthlySalesChart(monthlyData) {
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        color: '#374151',
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
                 }
             },
             scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(30, 58, 138, 0.1)',
+                        borderColor: '#1e3a8a',
+                        borderWidth: 2
+                    },
+                    ticks: {
+                        color: '#374151',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                },
                 y: {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    grid: {
+                        color: 'rgba(30, 58, 138, 0.1)'
+                    },
+                    ticks: {
+                        color: '#374151',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
                 },
                 y1: {
                     type: 'linear',
@@ -260,7 +303,14 @@ function renderMonthlySalesChart(monthlyData) {
                     position: 'right',
                     grid: {
                         drawOnChartArea: false,
+                        color: 'rgba(212, 175, 55, 0.1)'
                     },
+                    ticks: {
+                        color: '#374151',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
                 }
             }
         }

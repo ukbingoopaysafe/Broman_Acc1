@@ -3,74 +3,53 @@
 {% block title %}تسجيل الدخول - BroMan{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-lg">
-            <div class="card-body p-5">
-                <!-- Logo -->
-                <div class="text-center mb-4">
-                    <img src="{{ url_for('static', filename='images/broman_logo.png') }}" alt="BroMan Logo" class="img-fluid mb-3" style="max-height: 80px;">
-                    <h2 class="card-title text-primary">تسجيل الدخول</h2>
-                    <p class="text-muted">نظام إدارة الحسابات العقارية</p>
+<div class="auth-wrapper">
+    <div class="login-card card shadow-lg fade-in">
+        <div class="login-body">
+            <div class="logo-section text-center mb-4">
+                <div class="company-logo">
+                    <img src="{{ url_for('static', filename='images/broman_logo.png') }}" alt="BroMan Logo" class="logo-img">
                 </div>
+                <h2 class="login-title mb-2">تسجيل الدخول</h2>
                 
-                <!-- Login Form -->
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">اسم المستخدم</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label">كلمة المرور</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">تذكرني</label>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right"></i>
-                            دخول
-                        </button>
-                    </div>
-                </form>
-                
-                <!-- Alert for messages -->
-                <div id="loginAlert" class="alert alert-dismissible fade show mt-3" style="display: none;" role="alert">
-                    <span id="loginMessage"></span>
-                    <button type="button" class="btn-close" onclick="hideAlert()"></button>
-                </div>
             </div>
-        </div>
         
-        <!-- Default Credentials Info -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title text-info">
-                    <i class="bi bi-info-circle"></i>
-                    بيانات الدخول الافتراضية
-                </h6>
-                <p class="card-text small">
-                    <strong>اسم المستخدم:</strong> admin<br>
-                    <strong>كلمة المرور:</strong> admin123
-                </p>
-                <p class="text-warning small">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    يرجى تغيير كلمة المرور بعد أول تسجيل دخول
-                </p>
+            <form id="loginForm" dir="rtl">
+                <div class="mb-4">
+                    <label for="username" class="form-label text-end d-block">اسم المستخدم</label>
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control text-end" id="username" name="username" required placeholder="أدخل اسم المستخدم">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="password" class="form-label text-end d-block">كلمة المرور</label>
+                    <div class="input-group input-group-lg">
+                        <input type="password" class="form-control text-end" id="password" name="password" required placeholder="أدخل كلمة المرور">
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    </div>
+                </div>
+                
+                <div class="mb-4 form-check text-end">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">تذكرني</label>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        دخول
+                    </button>
+                </div>
+            </form>
+            
+            <div id="loginAlert" class="alert alert-dismissible fade show mt-3" style="display: none;" role="alert">
+                <span id="loginMessage"></span>
+                <button type="button" class="btn-close" onclick="hideAlert()"></button>
             </div>
         </div>
     </div>
