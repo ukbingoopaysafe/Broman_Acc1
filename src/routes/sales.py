@@ -6,6 +6,7 @@ from src.models.treasury import Treasury
 from src.models.transaction import Transaction
 from src.models.user import User
 from datetime import datetime, timedelta
+from decimal import Decimal
 from sqlalchemy import func, desc
 
 sales_bp = Blueprint('sales', __name__)
@@ -150,41 +151,55 @@ def create_sale():
             sale_date = datetime.strptime(data['sale_date'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
-        
-        # Calculate commissions and taxes
-        unit_price = float(data['unit_price'])
-        
+
+        # Calculate commissions and taxes using Decimal to avoid mixing float and Decimal
+        unit_price = Decimal(str(data['unit_price']))
+
         # Company commission
-        company_commission = unit_price * rates.company_commission_rate
-        
+        company_commission = unit_price * Decimal(str(rates.company_commission_rate))
+
         # Salesperson commission
-        salesperson_commission = unit_price * rates.salesperson_commission_rate
-        
+        salesperson_commission = unit_price * Decimal(str(rates.salesperson_commission_rate))
+
         # Salesperson incentive
-        salesperson_incentive = unit_price * rates.salesperson_incentive_rate
-        
+        salesperson_incentive = unit_price * Decimal(str(rates.salesperson_incentive_rate))
+
         # Additional incentive tax
-        additional_incentive_tax = salesperson_incentive * rates.additional_incentive_tax_rate
-        
+        additional_incentive_tax = salesperson_incentive * Decimal(str(rates.additional_incentive_tax_rate))
+
         # VAT
-        vat_amount = company_commission * rates.vat_rate
-        
+        vat_amount = company_commission * Decimal(str(rates.vat_rate))
+
         # Sales tax
-        sales_tax = company_commission * rates.sales_tax_rate
-        
+        sales_tax = company_commission * Decimal(str(rates.sales_tax_rate))
+
         # Annual tax
-        annual_tax = company_commission * rates.annual_tax_rate
-        
+        annual_tax = company_commission * Decimal(str(rates.annual_tax_rate))
+
         # Sales manager commission
-        sales_manager_commission = unit_price * rates.sales_manager_commission_rate
-        
+        sales_manager_commission = unit_price * Decimal(str(rates.sales_manager_commission_rate))
+
         # Net company income
         net_company_income = (company_commission - vat_amount - sales_tax - 
-                            annual_tax - salesperson_commission - 
-                            salesperson_incentive - additional_incentive_tax - 
-                            sales_manager_commission)
+                    annual_tax - salesperson_commission - 
+                    salesperson_incentive - additional_incentive_tax - 
+                    sales_manager_commission)
         
-        # Create sale record
+        # Create treasury transaction for net company income first (so we can link it)
+        transaction = None
+        if net_company_income > 0:
+            transaction = Transaction(
+                type='إيراد من بيع عقار',
+                amount=net_company_income,
+                description=f'صافي إيراد من بيع الوحدة {data["unit_code"]} - {data["client_name"]}',
+                transaction_date=datetime.now(),
+                related_entity_type='sale',
+                user_id=current_user.id
+            )
+            db.session.add(transaction)
+            db.session.flush()  # ensure transaction.id is available
+
+        # Create sale record using model column names
         sale = Sale(
             client_name=data['client_name'],
             unit_code=data['unit_code'],
@@ -194,36 +209,38 @@ def create_sale():
             project_name=data['project_name'],
             salesperson_name=data.get('salesperson_name', ''),
             sales_manager_name=data.get('sales_manager_name', ''),
-            company_commission=company_commission,
-            salesperson_commission=salesperson_commission,
-            salesperson_incentive=salesperson_incentive,
-            additional_incentive_tax=additional_incentive_tax,
+            company_commission_rate=rates.company_commission_rate,
+            salesperson_commission_rate=rates.salesperson_commission_rate,
+            salesperson_incentive_rate=rates.salesperson_incentive_rate,
+            additional_incentive_tax_rate=rates.additional_incentive_tax_rate,
+            vat_rate=rates.vat_rate,
+            sales_tax_rate=rates.sales_tax_rate,
+            annual_tax_rate=rates.annual_tax_rate,
+            sales_manager_commission_rate=rates.sales_manager_commission_rate,
+            company_commission_amount=company_commission,
+            salesperson_commission_amount=salesperson_commission,
+            salesperson_incentive_amount=salesperson_incentive,
+            total_company_commission_before_tax=company_commission,
+            total_salesperson_incentive_paid=salesperson_incentive,
             vat_amount=vat_amount,
-            sales_tax=sales_tax,
-            annual_tax=annual_tax,
-            sales_manager_commission=sales_manager_commission,
-            net_company_income=net_company_income,
+            sales_tax_amount=sales_tax,
+            annual_tax_amount=annual_tax,
+            sales_manager_commission_amount=sales_manager_commission,
+            transaction_id=transaction.id if transaction is not None else None,
             notes=data.get('notes', ''),
             created_by=current_user.id
         )
-        
+
         db.session.add(sale)
         db.session.flush()  # Get the sale ID
-        
-        # Create treasury transaction for net company income
-        if net_company_income > 0:
-            transaction = Transaction(
-                type='إيراد من بيع عقار',
-                amount=net_company_income,
-                description=f'صافي إيراد من بيع الوحدة {data["unit_code"]} - {data["client_name"]}',
-                transaction_date=datetime.now(),
-                related_entity_type='sale',
-                related_entity_id=sale.id,
-                user_id=current_user.id
-            )
+
+        # Link transaction to sale (set related_entity_id)
+        if transaction is not None:
+            transaction.related_entity_id = sale.id
             db.session.add(transaction)
-            
-            # Update treasury balance
+
+        # Update treasury balance
+        if net_company_income > 0:
             Treasury.add_to_balance(net_company_income)
         
         db.session.commit()
@@ -296,23 +313,34 @@ def update_sale(sale_id):
             rates = PropertyTypeRates.query.filter_by(property_type=sale.property_type).first()
             if not rates:
                 return jsonify({'error': f'لم يتم العثور على أسعار نوع العقار: {sale.property_type}'}), 400
-            
-            unit_price = float(sale.unit_price)
-            
-            # Recalculate all amounts
-            sale.company_commission = unit_price * rates.company_commission_rate
-            sale.salesperson_commission = unit_price * rates.salesperson_commission_rate
-            sale.salesperson_incentive = unit_price * rates.salesperson_incentive_rate
-            sale.additional_incentive_tax = sale.salesperson_incentive * rates.additional_incentive_tax_rate
-            sale.vat_amount = sale.company_commission * rates.vat_rate
-            sale.sales_tax = sale.company_commission * rates.sales_tax_rate
-            sale.annual_tax = sale.company_commission * rates.annual_tax_rate
-            sale.sales_manager_commission = unit_price * rates.sales_manager_commission_rate
-            
-            sale.net_company_income = (sale.company_commission - sale.vat_amount - 
-                                     sale.sales_tax - sale.annual_tax - 
-                                     sale.salesperson_commission - sale.salesperson_incentive - 
-                                     sale.additional_incentive_tax - sale.sales_manager_commission)
+
+            unit_price = Decimal(str(sale.unit_price))
+
+            # Recalculate all amounts using Decimal
+            sale.company_commission_rate = rates.company_commission_rate
+            sale.salesperson_commission_rate = rates.salesperson_commission_rate
+            sale.salesperson_incentive_rate = rates.salesperson_incentive_rate
+            sale.additional_incentive_tax_rate = rates.additional_incentive_tax_rate
+            sale.vat_rate = rates.vat_rate
+            sale.sales_tax_rate = rates.sales_tax_rate
+            sale.annual_tax_rate = rates.annual_tax_rate
+            sale.sales_manager_commission_rate = rates.sales_manager_commission_rate
+
+            sale.company_commission_amount = unit_price * Decimal(str(rates.company_commission_rate))
+            sale.salesperson_commission_amount = unit_price * Decimal(str(rates.salesperson_commission_rate))
+            sale.salesperson_incentive_amount = unit_price * Decimal(str(rates.salesperson_incentive_rate))
+            sale.total_company_commission_before_tax = sale.company_commission_amount
+            sale.total_salesperson_incentive_paid = sale.salesperson_incentive_amount
+            sale.vat_amount = sale.total_company_commission_before_tax * Decimal(str(rates.vat_rate))
+            sale.sales_tax_amount = sale.total_company_commission_before_tax * Decimal(str(rates.sales_tax_rate))
+            sale.annual_tax_amount = sale.total_company_commission_before_tax * Decimal(str(rates.annual_tax_rate))
+            sale.sales_manager_commission_amount = unit_price * Decimal(str(rates.sales_manager_commission_rate))
+
+            # Net company income is not a stored field in the model; compute for any downstream logic
+            net_company_income = (sale.company_commission_amount - sale.vat_amount - sale.sales_tax_amount - 
+                                  sale.annual_tax_amount - sale.salesperson_commission_amount - 
+                                  sale.salesperson_incentive_amount - (sale.salesperson_incentive_amount * Decimal(str(rates.additional_incentive_tax_rate))) - 
+                                  sale.sales_manager_commission_amount)
         
         sale.updated_at = datetime.now()
         db.session.commit()

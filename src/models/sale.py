@@ -48,6 +48,11 @@ class Sale(db.Model):
     unit_code = db.Column(db.String(100), unique=True, nullable=False)
     unit_price = db.Column(db.Numeric(15, 2), nullable=False)
     property_type = db.Column(db.String(50), nullable=False)
+    project_name = db.Column(db.String(255), nullable=True)
+    salesperson_name = db.Column(db.String(255), nullable=True)
+    sales_manager_name = db.Column(db.String(255), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    created_by = db.Column(db.Integer, nullable=True)
     
     # Commission and tax rates (stored at time of sale to preserve historical accuracy)
     company_commission_rate = db.Column(db.Numeric(5, 4), nullable=False)
@@ -71,7 +76,7 @@ class Sale(db.Model):
     sales_manager_commission_amount = db.Column(db.Numeric(15, 2), nullable=False)
     
     # Foreign key to transaction
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), unique=True, nullable=False)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), unique=True, nullable=True)
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -105,6 +110,11 @@ class Sale(db.Model):
             'sales_tax_amount': float(self.sales_tax_amount),
             'annual_tax_amount': float(self.annual_tax_amount),
             'sales_manager_commission_amount': float(self.sales_manager_commission_amount),
+            'project_name': self.project_name,
+            'salesperson_name': self.salesperson_name,
+            'sales_manager_name': self.sales_manager_name,
+            'notes': self.notes,
+            'created_by': self.created_by,
             'transaction_id': self.transaction_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
