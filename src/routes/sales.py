@@ -37,8 +37,8 @@ def sales_list():
 @login_required
 @require_permission('create_sales')
 def new_sale():
-    """New sale page"""
-    return render_template('sales/form.html', sale=None)
+    """New sale page with enhanced form"""
+    return render_template("sales/form_enhanced.html", sale=None)
 
 @sales_bp.route('/<int:sale_id>')
 @login_required
@@ -52,9 +52,9 @@ def sale_detail(sale_id):
 @login_required
 @require_permission('edit_sales')
 def edit_sale(sale_id):
-    """Edit sale page"""
+    """Edit sale page with enhanced form"""
     sale = Sale.query.get_or_404(sale_id)
-    return render_template('sales/form.html', sale=sale)
+    return render_template("sales/form_enhanced.html", sale=sale)
 
 # API Routes
 @sales_bp.route('/api/sales', methods=['GET'])
@@ -115,45 +115,14 @@ def get_sales():
     except Exception as e:
         return jsonify({'error': f'خطأ في جلب المبيعات: {str(e)}'}), 500
 
-@sales_bp.route('/api/sales', methods=['POST'])
-@login_required
-@require_permission('create_sales')
-def create_sale():
-    """Create new sale"""
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'لا توجد بيانات'}), 400
-        
-        # Validate required fields
-        required_fields = [
-            'client_name', 'unit_code', 'property_type', 'unit_price',
-            'sale_date', 'project_name'
-        ]
-        
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'الحقل {field} مطلوب'}), 400
-        
-        # Check if unit code already exists
-        existing_sale = Sale.query.filter_by(unit_code=data['unit_code']).first()
-        if existing_sale:
-            return jsonify({'error': 'كود الوحدة موجود بالفعل'}), 400
-        
-        # Get property type rates
-        rates = PropertyTypeRates.query.filter_by(property_type=data['property_type']).first()
-        if not rates:
-            return jsonify({'error': f'لم يتم العثور على أسعار نوع العقار: {data["property_type"]}'}), 400
-        
-        # Parse sale date
-        try:
-            sale_date = datetime.strptime(data['sale_date'], '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
+from src.routes.sales_new import create_sale as create_sale_new
 
-        # Calculate commissions and taxes using Decimal to avoid mixing float and Decimal
-        unit_price = Decimal(str(data['unit_price']))
+@sales_bp.route("/api/sales", methods=["POST"])
+@login_required
+@require_permission("create_sales")
+def create_sale():
+    """Create new sale with enhanced calculation logic"""
+    return create_sale_new()
 
         # Company commission
         company_commission = unit_price * Decimal(str(rates.company_commission_rate))
@@ -265,94 +234,14 @@ def get_sale(sale_id):
     except Exception as e:
         return jsonify({'error': f'خطأ في جلب معاملة البيع: {str(e)}'}), 500
 
+from src.routes.sales_new import update_sale as update_sale_new
+
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['PUT'])
 @login_required
 @require_permission('edit_sales')
 def update_sale(sale_id):
-    """Update sale"""
-    try:
-        sale = Sale.query.get_or_404(sale_id)
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'لا توجد بيانات'}), 400
-        
-        # Check if unit code already exists (excluding current sale)
-        if 'unit_code' in data and data['unit_code'] != sale.unit_code:
-            existing_sale = Sale.query.filter(
-                Sale.unit_code == data['unit_code'],
-                Sale.id != sale_id
-            ).first()
-            if existing_sale:
-                return jsonify({'error': 'كود الوحدة موجود بالفعل'}), 400
-        
-        # Update basic fields
-        updatable_fields = [
-            'client_name', 'unit_code', 'property_type', 'unit_price',
-            'sale_date', 'project_name', 'salesperson_name', 
-            'sales_manager_name', 'notes'
-        ]
-        
-        recalculate_needed = False
-        
-        for field in updatable_fields:
-            if field in data:
-                if field == 'sale_date':
-                    try:
-                        sale.sale_date = datetime.strptime(data[field], '%Y-%m-%d').date()
-                    except ValueError:
-                        return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
-                elif field in ['unit_price', 'property_type']:
-                    setattr(sale, field, data[field])
-                    recalculate_needed = True
-                else:
-                    setattr(sale, field, data[field])
-        
-        # Recalculate commissions and taxes if needed
-        if recalculate_needed:
-            rates = PropertyTypeRates.query.filter_by(property_type=sale.property_type).first()
-            if not rates:
-                return jsonify({'error': f'لم يتم العثور على أسعار نوع العقار: {sale.property_type}'}), 400
-
-            unit_price = Decimal(str(sale.unit_price))
-
-            # Recalculate all amounts using Decimal
-            sale.company_commission_rate = rates.company_commission_rate
-            sale.salesperson_commission_rate = rates.salesperson_commission_rate
-            sale.salesperson_incentive_rate = rates.salesperson_incentive_rate
-            sale.additional_incentive_tax_rate = rates.additional_incentive_tax_rate
-            sale.vat_rate = rates.vat_rate
-            sale.sales_tax_rate = rates.sales_tax_rate
-            sale.annual_tax_rate = rates.annual_tax_rate
-            sale.sales_manager_commission_rate = rates.sales_manager_commission_rate
-
-            sale.company_commission_amount = unit_price * Decimal(str(rates.company_commission_rate))
-            sale.salesperson_commission_amount = unit_price * Decimal(str(rates.salesperson_commission_rate))
-            sale.salesperson_incentive_amount = unit_price * Decimal(str(rates.salesperson_incentive_rate))
-            sale.total_company_commission_before_tax = sale.company_commission_amount
-            sale.total_salesperson_incentive_paid = sale.salesperson_incentive_amount
-            sale.vat_amount = sale.total_company_commission_before_tax * Decimal(str(rates.vat_rate))
-            sale.sales_tax_amount = sale.total_company_commission_before_tax * Decimal(str(rates.sales_tax_rate))
-            sale.annual_tax_amount = sale.total_company_commission_before_tax * Decimal(str(rates.annual_tax_rate))
-            sale.sales_manager_commission_amount = unit_price * Decimal(str(rates.sales_manager_commission_rate))
-
-            # Net company income is not a stored field in the model; compute for any downstream logic
-            net_company_income = (sale.company_commission_amount - sale.vat_amount - sale.sales_tax_amount - 
-                                  sale.annual_tax_amount - sale.salesperson_commission_amount - 
-                                  sale.salesperson_incentive_amount - (sale.salesperson_incentive_amount * Decimal(str(rates.additional_incentive_tax_rate))) - 
-                                  sale.sales_manager_commission_amount)
-        
-        sale.updated_at = datetime.now()
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'تم تحديث معاملة البيع بنجاح',
-            'sale': sale.to_dict()
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'خطأ في تحديث معاملة البيع: {str(e)}'}), 500
+    """Update sale with enhanced calculation logic"""
+    return update_sale_new(sale_id)
 
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['DELETE'])
 @login_required
