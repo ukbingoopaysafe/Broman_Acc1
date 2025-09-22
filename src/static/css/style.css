@@ -46,22 +46,40 @@ body {
 }
 
 .navbar-brand .navbar-logo {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--gold-accent), var(--gold-light));
-    border-radius: 8px;
+    /* Remove box look: let the SVG define its own shape and visible area */
+    width: auto; /* allow the img size to control the visual */
+    height: auto;
+    background: transparent !important;
+    border-radius: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
-    padding: 6px;
+    padding: 0;
+    box-shadow: none;
 }
 
 .navbar-brand .navbar-logo-img {
-    width: 28px;
-    height: 28px;
+    width: 80px;   /* larger logo for visibility */
+    height: auto;
+    max-height: 56px; /* prevent overflow of navbar */
     object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    margin: 0; /* remove surrounding margins */
+    padding: 0; /* remove surrounding padding */
+    display: block;
+}
+
+/* Force SVG logos to use the SVG's white fills and remain transparent - helpful for broman_logo2.svg */
+.navbar-logo-img, .footer-logo-img, .logo-img {
+    background: transparent !important;
+    /* ensure SVG inherent colors are used; remove CSS filters that might recolor */
+    filter: none !important;
+}
+
+/* When navbar has dark background, ensure logo container doesn't add a background */
+.navbar .navbar-logo {
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
 }
 
 .navbar-nav .nav-link {
@@ -262,189 +280,108 @@ body {
 }
 
 /* ===========================================
-   COMPANY LOGO STYLES - ENHANCED VISIBILITY
+   COMPANY LOGO STYLES - CORRECTED FOR TRANSPARENCY
    =========================================== */
 
-/* Navbar Logo - Enhanced for Dark Background */
+/* General rule for all logo containers: make them invisible wrappers */
+.navbar-logo, .footer-logo, .company-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    transition: transform 0.25s ease;
+}
+
+.navbar-logo:hover, .footer-logo:hover, .company-logo:hover {
+    transform: scale(1.05); /* Keep a simple hover effect */
+}
+
+/* General rule for all logo images */
+.navbar-logo-img, .footer-logo-img, .logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* REMOVED: filter property to show the original logo colors */
+}
+
+/* Specific sizing for Navbar Logo */
 .navbar-logo {
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* container should not impose small square — allow image to size naturally */
+    width: auto;
+    height: auto;
     margin-right: 12px;
-    transition: all 0.3s ease;
-    /* Add subtle background for better visibility */
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px;
 }
 
-.navbar-logo:hover {
-    transform: scale(1.05);
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.navbar-logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: all 0.3s ease;
-    /* Enhanced visibility */
-    filter: brightness(1.2) contrast(1.1);
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-}
-
-.navbar-logo-img:hover {
-    transform: scale(1.1);
-    filter: brightness(1.3) contrast(1.2);
-}
-
-/* Footer Logo - Enhanced for Dark Background */
+/* Specific sizing for Footer Logo */
 .footer-logo {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Add subtle background for better visibility */
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 5px;
-    transition: all 0.3s ease;
+    width: auto;
+    height: auto;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
-.footer-logo:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: scale(1.05);
-}
-
-.footer-logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    /* Enhanced visibility */
-    filter: brightness(1.2) contrast(1.1);
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-    transition: all 0.3s ease;
-}
-
-.footer-logo-img:hover {
-    filter: brightness(1.3) contrast(1.2);
-}
-
-/* Login Page Logo - Enhanced for Light Background */
+/* Specific sizing for Login Page Logo */
 .company-logo {
-    width: 130px;
-    height: 130px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: auto;
+    height: auto;
     margin: 0 auto 25px;
-    transition: all 0.3s ease;
-    /* Add subtle shadow for depth */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.9);
 }
 
-.company-logo:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: all 0.3s ease;
-    /* Enhanced visibility */
-    filter: brightness(1.1) contrast(1.05);
-    max-width: 100%;
-    max-height: 100%;
+/* Login page logo sizing: keep it prominent but proportional */
+.company-logo .logo-img {
+    width: 140px;
+    height: auto;
+    max-height: 140px;
     display: block;
+    margin: 0 auto;
 }
 
-.logo-img:hover {
-    transform: scale(1.05);
-    filter: brightness(1.15) contrast(1.1);
-}
 
 /* Responsive Logo Adjustments */
 @media (max-width: 768px) {
-    .navbar-logo {
-        width: 38px;
-        height: 38px;
-        margin-right: 10px;
-        padding: 5px;
-    }
-    
-    .navbar-logo-img {
-        width: 100%;
-        height: 100%;
+    .navbar-brand .navbar-logo-img {
+        width: 64px;
+        max-height: 48px;
     }
     
     .footer-logo {
         width: 35px;
         height: 35px;
-        padding: 4px;
-    }
-    
-    .footer-logo-img {
-        width: 100%;
-        height: 100%;
     }
     
     .company-logo {
-        width: 110px;
-        height: 110px;
+        width: auto;
+        height: auto;
         margin-bottom: 20px;
-        padding: 8px;
     }
-    
-    .logo-img {
-        width: 100%;
-        height: 100%;
+
+    .company-logo .logo-img {
+        width: 120px;
+        max-height: 120px;
     }
 }
 
 @media (max-width: 480px) {
-    .navbar-logo {
-        width: 35px;
-        height: 35px;
-        margin-right: 8px;
-        padding: 4px;
+    .navbar-brand .navbar-logo-img {
+        width: 56px;
+        max-height: 44px;
     }
     
-    .footer-logo {
-        width: 32px;
-        height: 32px;
-        padding: 3px;
+    .footer-logo .footer-logo-img, .footer-logo-img {
+        width: 80px; /* match navbar size */
+        height: auto;
+        max-height: 56px;
+        margin: 0 auto; /* center horizontally in footer */
+        display: block;
     }
     
-    .company-logo {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 15px;
-        padding: 6px;
-    }
-}
-
-@media (max-width: 576px) {
-    .company-logo {
-        width: 90px;
-        height: 90px;
+    .company-logo .logo-img {
+        width: 140px;
+        height: auto;
         margin-bottom: 12px;
-    }
-    
-    .logo-img {
-        width: 90px;
-        height: 90px;
     }
 }
 
@@ -815,30 +752,36 @@ footer p {
 }
 
 .footer-logo {
-    width: 30px;
-    height: 30px;
-    background: linear-gradient(135deg, var(--gold-accent), var(--gold-light));
-    border-radius: 6px;
+    /* Make footer logo container transparent and unboxed so SVG shows alone */
+    width: auto;
+    height: auto;
+    background: transparent !important;
+    border-radius: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .footer-logo-img {
-    width: 22px;
-    height: 22px;
+    /* Match navbar logo sizing and ensure visibility */
+    width: 80px !important;
+    height: auto !important;
+    max-height: 56px !important;
     object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    filter: none !important;
+    display: block;
+    margin: 0 auto;
 }
 
 /* Premium Logo Styling */
 .navbar-brand img,
 .login-header img {
-    max-height: 40px;
+    max-height: 64px; /* allow larger logo in navbar */
     width: auto;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0; /* keep SVG shape as-is */
+    box-shadow: none;
 }
 
 /* Premium Print Styles */
