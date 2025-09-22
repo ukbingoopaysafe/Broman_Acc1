@@ -124,105 +124,6 @@ def create_sale():
     """Create new sale with enhanced calculation logic"""
     return create_sale_new()
 
-        # Company commission
-        company_commission = unit_price * Decimal(str(rates.company_commission_rate))
-
-        # Salesperson commission
-        salesperson_commission = unit_price * Decimal(str(rates.salesperson_commission_rate))
-
-        # Salesperson incentive
-        salesperson_incentive = unit_price * Decimal(str(rates.salesperson_incentive_rate))
-
-        # Additional incentive tax
-        additional_incentive_tax = salesperson_incentive * Decimal(str(rates.additional_incentive_tax_rate))
-
-        # VAT
-        vat_amount = company_commission * Decimal(str(rates.vat_rate))
-
-        # Sales tax
-        sales_tax = company_commission * Decimal(str(rates.sales_tax_rate))
-
-        # Annual tax
-        annual_tax = company_commission * Decimal(str(rates.annual_tax_rate))
-
-        # Sales manager commission
-        sales_manager_commission = unit_price * Decimal(str(rates.sales_manager_commission_rate))
-
-        # Net company income
-        net_company_income = (company_commission - vat_amount - sales_tax - 
-                    annual_tax - salesperson_commission - 
-                    salesperson_incentive - additional_incentive_tax - 
-                    sales_manager_commission)
-        
-        # Create treasury transaction for net company income first (so we can link it)
-        transaction = None
-        if net_company_income > 0:
-            transaction = Transaction(
-                type='إيراد من بيع عقار',
-                amount=net_company_income,
-                description=f'صافي إيراد من بيع الوحدة {data["unit_code"]} - {data["client_name"]}',
-                transaction_date=datetime.now(),
-                related_entity_type='sale',
-                user_id=current_user.id
-            )
-            db.session.add(transaction)
-            db.session.flush()  # ensure transaction.id is available
-
-        # Create sale record using model column names
-        sale = Sale(
-            client_name=data['client_name'],
-            unit_code=data['unit_code'],
-            property_type=data['property_type'],
-            unit_price=unit_price,
-            sale_date=sale_date,
-            project_name=data['project_name'],
-            salesperson_name=data.get('salesperson_name', ''),
-            sales_manager_name=data.get('sales_manager_name', ''),
-            company_commission_rate=rates.company_commission_rate,
-            salesperson_commission_rate=rates.salesperson_commission_rate,
-            salesperson_incentive_rate=rates.salesperson_incentive_rate,
-            additional_incentive_tax_rate=rates.additional_incentive_tax_rate,
-            vat_rate=rates.vat_rate,
-            sales_tax_rate=rates.sales_tax_rate,
-            annual_tax_rate=rates.annual_tax_rate,
-            sales_manager_commission_rate=rates.sales_manager_commission_rate,
-            company_commission_amount=company_commission,
-            salesperson_commission_amount=salesperson_commission,
-            salesperson_incentive_amount=salesperson_incentive,
-            total_company_commission_before_tax=company_commission,
-            total_salesperson_incentive_paid=salesperson_incentive,
-            vat_amount=vat_amount,
-            sales_tax_amount=sales_tax,
-            annual_tax_amount=annual_tax,
-            sales_manager_commission_amount=sales_manager_commission,
-            transaction_id=transaction.id if transaction is not None else None,
-            notes=data.get('notes', ''),
-            created_by=current_user.id
-        )
-
-        db.session.add(sale)
-        db.session.flush()  # Get the sale ID
-
-        # Link transaction to sale (set related_entity_id)
-        if transaction is not None:
-            transaction.related_entity_id = sale.id
-            db.session.add(transaction)
-
-        # Update treasury balance
-        if net_company_income > 0:
-            Treasury.add_to_balance(net_company_income)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'تم إنشاء معاملة البيع بنجاح',
-            'sale': sale.to_dict()
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': f'خطأ في إنشاء معاملة البيع: {str(e)}'}), 500
-
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['GET'])
 @login_required
 @require_permission('view_sales')
@@ -408,4 +309,5 @@ def get_sales_stats():
         
     except Exception as e:
         return jsonify({'error': f'خطأ في جلب إحصائيات المبيعات: {str(e)}'}), 500
+
 
