@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %} - BroMan
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                <i class="bi bi-house-door text-primary"></i>
+                {% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %}
+            </h1>
+            <a href="/sales" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+                العودة للقائمة
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-form-check"></i>
+                    بيانات المعاملة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="saleForm" novalidate>
+                    {% if sale %}
+                    <input type="hidden" id="saleId" value="{{ sale.id }}">
+                    {% endif %}
+                    
+                    <!-- Client and Unit Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary border-bottom pb-2">معلومات العميل والوحدة</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="client_name" class="form-label">اسم العميل <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" 
+                                   value="{% if sale %}{{ sale.client_name }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال اسم العميل</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="salesperson_name" class="form-label">ســلز</label>
+                            <input type="text" class="form-control" id="salesperson_name" name="salesperson_name" 
+                                   value="{% if sale %}{{ sale.salesperson_name }}{% endif %}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sales_manager_name" class="form-label">مدير المبيعات</label>
+                            <input type="text" class="form-control" id="sales_manager_name" name="sales_manager_name" 
+                                   value="{% if sale %}{{ sale.sales_manager_name }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="property_type" class="form-label">نوع العقار المباع <span class="text-danger">*</span></label>
+                            <select class="form-select" id="property_type" name="property_type" required>
+                                <option value="">اختر نوع العقار</option>
+                                <option value="شقة" {% if sale and sale.property_type == 'شقة' %}selected{% endif %}>شقة</option>
+                                <option value="تجاري" {% if sale and sale.property_type == 'تجاري' %}selected{% endif %}>تجاري</option>
+                                <option value="اداري" {% if sale and sale.property_type == 'اداري' %}selected{% endif %}>اداري</option>
+                                <option value="طبي" {% if sale and sale.property_type == 'طبي' %}selected{% endif %}>طبي</option>
+                            </select>
+                            <div class="invalid-feedback">يرجى اختيار نوع العقار</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="unit_code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="unit_code" name="unit_code" 
+                                   value="{% if sale %}{{ sale.unit_code }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال كود الوحدة</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sale_date" class="form-label">تاريخ البيع <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                   value="{% if sale %}{{ sale.sale_date }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال تاريخ البيع</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="unit_price" class="form-label">سعر الوحدة (جنيه) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                   value="{% if sale %}{{ sale.unit_price }}{% endif %}" 
+                                   step="0.01" min="0" required>
+                            <div class="invalid-feedback">يرجى إدخال سعر الوحدة</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="project_name" class="form-label">اسم المشروع</label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" 
+                                   value="{% if sale %}{{ sale.project_name }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <!-- Commission Rates -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h6 class="text-info border-bottom pb-2">نسب العمولات</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="company_commission_rate" class="form-label">نسبة عمولة الشركة (%) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="company_commission_rate" name="company_commission_rate" 
+                                   value="{% if sale %}{{ sale.company_commission_rate * 100 }}{% endif %}" 
+                                   step="0.01" min="0" max="100" required>
+                            <div class="invalid-feedback">يرجى إدخال نسبة عمولة الشركة</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="salesperson_commission_rate" class="form-label">نسبة عمولة السلز (%)</label>
+                            <input type="number" class="form-control" id="salesperson_commission_rate" name="salesperson_commission_rate" 
+                                   value="{% if sale %}{{ sale.salesperson_commission_rate * 100 }}{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">اختيارية - في حال وجود سلز في المعاملة</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="salesperson_incentive_rate" class="form-label">نسبة الحافز للسلز (%)</label>
+                            <input type="number" class="form-control" id="salesperson_incentive_rate" name="salesperson_incentive_rate" 
+                                   value="{% if sale %}{{ sale.salesperson_incentive_rate * 100 }}{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">اختيارية</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Tax Rates -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h6 class="text-warning border-bottom pb-2">نسب الضرائب</h6>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="vat_rate" class="form-label">نسبة ضريبة القيمة المضافة (%)</label>
+                            <input type="number" class="form-control" id="vat_rate" name="vat_rate" 
+                                   value="{% if sale %}{{ sale.vat_rate * 100 }}{% else %}14{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">افتراضيا 14% - يمكن تغييرها أو إلغائها</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="sales_tax_rate" class="form-label">نسبة ضريبة المبيعات (%)</label>
+                            <input type="number" class="form-control" id="sales_tax_rate" name="sales_tax_rate" 
+                                   value="{% if sale %}{{ sale.sales_tax_rate * 100 }}{% else %}5{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">افتراضيا 5% - يمكن تغييرها أو إلغائها</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="annual_tax_rate" class="form-label">نسبة الضريبة السنوية (%)</label>
+                            <input type="number" class="form-control" id="annual_tax_rate" name="annual_tax_rate" 
+                                   value="{% if sale %}{{ sale.annual_tax_rate * 100 }}{% else %}22.5{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">افتراضيا 22.5% - يمكن تغييرها أو إلغائها</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="salesperson_tax_rate" class="form-label">نسبة ضريبة السلز (%)</label>
+                            <input type="number" class="form-control" id="salesperson_tax_rate" name="salesperson_tax_rate" 
+                                   value="{% if sale %}{{ sale.salesperson_tax_rate * 100 }}{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">اختيارية</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sales_manager_tax_rate" class="form-label">نسبة ضريبة مدير المبيعات (%)</label>
+                            <input type="number" class="form-control" id="sales_manager_tax_rate" name="sales_manager_tax_rate" 
+                                   value="{% if sale %}{{ sale.sales_manager_tax_rate * 100 }}{% endif %}" 
+                                   step="0.01" min="0" max="100">
+                            <small class="form-text text-muted">اختيارية</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="notes" class="form-label">ملاحظات</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{% if sale %}{{ sale.notes }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Calculations Preview -->
+                    <div class="row mb-4 mt-4" id="calculationsPreview" style="display: none;">
+                        <div class="col-12">
+                            <h6 class="text-success border-bottom pb-2">
+                                <i class="bi bi-calculator"></i>
+                                معاينة الحسابات المالية
+                                <span class="badge bg-info ms-2" id="previewStatus">محدث</span>
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">العمولات والحوافز</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm mb-0">
+                                        <tr><td><strong>عمولة الشركة:</strong></td><td id="preview_company_commission">-</td></tr>
+                                        <tr><td><strong>عمولة السلز:</strong></td><td id="preview_salesperson_commission">-</td></tr>
+                                        <tr><td><strong>حافز السلز:</strong></td><td id="preview_salesperson_incentive">-</td></tr>
+                                        <tr><td><strong>عمولة مدير المبيعات:</strong></td><td id="preview_sales_manager_commission">-</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">الضرائب</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm mb-0">
+                                        <tr><td><strong>ضريبة القيمة المضافة:</strong></td><td id="preview_vat_amount">-</td></tr>
+                                        <tr><td><strong>ضريبة المبيعات:</strong></td><td id="preview_sales_tax">-</td></tr>
+                                        <tr><td><strong>الضريبة السنوية:</strong></td><td id="preview_annual_tax">-</td></tr>
+                                        <tr><td><strong>ضريبة السلز:</strong></td><td id="preview_salesperson_tax">-</td></tr>
+                                        <tr><td><strong>ضريبة مدير المبيعات:</strong></td><td id="preview_sales_manager_tax">-</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-cash-stack"></i>
+                                        الملخص المالي والربط بالخزنة
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <table class="table table-sm mb-0">
+                                                <tr><td><strong>إجمالي سعر الوحدة:</strong></td><td id="preview_total_unit_price">-</td></tr>
+                                                <tr><td><strong>إجمالي العمولات:</strong></td><td id="preview_total_commissions">-</td></tr>
+                                                <tr><td><strong>إجمالي الضرائب:</strong></td><td id="preview_total_taxes">-</td></tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <table class="table table-sm mb-0">
+                                                <tr class="table-success"><td><strong>صافي إيراد الشركة:</strong></td><td id="preview_net_company_income"><strong>-</strong></td></tr>
+                                                <tr><td><strong>صافي عمولة السلز:</strong></td><td id="preview_net_salesperson_income">-</td></tr>
+                                                <tr><td><strong>صافي عمولة مدير المبيعات:</strong></td><td id="preview_net_sales_manager_income">-</td></tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="bi bi-info-circle"></i>
+                                                <strong>ملاحظة:</strong> سيتم إضافة مبلغ <span id="treasury_amount" class="fw-bold">-</span> إلى الخزنة كإيراد من هذه المعاملة.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-primary" onclick="calculatePreview()">
+                                    <i class="bi bi-calculator"></i>
+                                    معاينة الحسابات
+                                </button>
+                                <div>
+                                    <a href="/sales" class="btn btn-secondary me-2">إلغاء</a>
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <i class="bi bi-check-circle"></i>
+                                        {% if sale %}تحديث المعاملة{% else %}حفظ المعاملة{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">تأكيد حفظ المعاملة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حفظ هذه المعاملة؟</p>
+                <div class="alert alert-info">
+                    <strong>سيتم إضافة مبلغ <span id="modal_treasury_amount">-</span> إلى الخزنة.</strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="confirmSaveBtn">
+                    <i class="bi bi-check-circle"></i>
+                    تأكيد الحفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSale = {% if sale %}{{ sale.to_dict() | tojson }}{% else %}null{% endif %};
+let lastCalculatedData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup form validation
+    const form = document.getElementById('saleForm');
+    form.addEventListener('submit', handleFormSubmit);
+    
+    // Auto-calculate on input changes
+    const inputFields = ['unit_price', 'company_commission_rate', 'salesperson_commission_rate', 
+                        'salesperson_incentive_rate', 'vat_rate', 'sales_tax_rate', 'annual_tax_rate',
+                        'salesperson_tax_rate', 'sales_manager_tax_rate'];
+    
+    inputFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', debounce(calculatePreview, 500));
+        }
+    });
+    
+    // Set default date to today if creating new sale
+    if (!currentSale) {
+        document.getElementById('sale_date').value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Calculate preview if editing existing sale
+    if (currentSale) {
+        calculatePreview();
+    }
+    
+    // Setup confirmation modal
+    document.getElementById('confirmSaveBtn').addEventListener('click', function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        modal.hide();
+        submitSale();
+    });
+});
+
+async function calculatePreview() {
+    const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+    const companyCommissionRate = parseFloat(document.getElementById('company_commission_rate').value) || 0;
+    
+    if (unitPrice <= 0 || companyCommissionRate <= 0) {
+        document.getElementById('calculationsPreview').style.display = 'none';
+        return;
+    }
+    
+    // Update status
+    document.getElementById('previewStatus').textContent = 'جاري الحساب...';
+    document.getElementById('previewStatus').className = 'badge bg-warning ms-2';
+    
+    try {
+        // Prepare data for calculation
+        const data = {
+            unit_price: unitPrice,
+            company_commission_rate: companyCommissionRate / 100,
+            salesperson_commission_rate: (parseFloat(document.getElementById('salesperson_commission_rate').value) || 0) / 100,
+            salesperson_incentive_rate: (parseFloat(document.getElementById('salesperson_incentive_rate').value) || 0) / 100,
+            vat_rate: (parseFloat(document.getElementById('vat_rate').value) || 0) / 100,
+            sales_tax_rate: (parseFloat(document.getElementById('sales_tax_rate').value) || 0) / 100,
+            annual_tax_rate: (parseFloat(document.getElementById('annual_tax_rate').value) || 0) / 100,
+            salesperson_tax_rate: (parseFloat(document.getElementById('salesperson_tax_rate').value) || 0) / 100,
+            sales_manager_tax_rate: (parseFloat(document.getElementById('sales_manager_tax_rate').value) || 0) / 100
+        };
+        
+        // Call backend API for calculation
+        const response = await fetch('/sales/api/calculate-preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            showError(result.error);
+            document.getElementById('previewStatus').textContent = 'خطأ';
+            document.getElementById('previewStatus').className = 'badge bg-danger ms-2';
+            return;
+        }
+        
+        // Store calculated data for later use
+        lastCalculatedData = result;
+        
+        // Update preview display
+        updatePreviewDisplay(result, unitPrice);
+        
+        // Update status
+        document.getElementById('previewStatus').textContent = 'محدث';
+        document.getElementById('previewStatus').className = 'badge bg-success ms-2';
+        
+        // Show preview
+        document.getElementById('calculationsPreview').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error calculating preview:', error);
+        showError('حدث خطأ في حساب المعاينة');
+        document.getElementById('previewStatus').textContent = 'خطأ';
+        document.getElementById('previewStatus').className = 'badge bg-danger ms-2';
+    }
+}
+
+function updatePreviewDisplay(data, unitPrice) {
+    // Update commission amounts
+    document.getElementById('preview_company_commission').textContent = formatCurrency(data.company_commission_amount);
+    document.getElementById('preview_salesperson_commission').textContent = formatCurrency(data.salesperson_commission_amount);
+    document.getElementById('preview_salesperson_incentive').textContent = formatCurrency(data.salesperson_incentive_amount);
+    document.getElementById('preview_sales_manager_commission').textContent = formatCurrency(data.sales_manager_commission_amount);
+    
+    // Update tax amounts
+    document.getElementById('preview_vat_amount').textContent = formatCurrency(data.vat_amount);
+    document.getElementById('preview_sales_tax').textContent = formatCurrency(data.sales_tax_amount);
+    document.getElementById('preview_annual_tax').textContent = formatCurrency(data.annual_tax_amount);
+    document.getElementById('preview_salesperson_tax').textContent = formatCurrency(data.salesperson_tax_amount);
+    document.getElementById('preview_sales_manager_tax').textContent = formatCurrency(data.sales_manager_tax_amount);
+    
+    // Calculate totals
+    const totalCommissions = data.company_commission_amount + data.salesperson_commission_amount + 
+                           data.salesperson_incentive_amount + data.sales_manager_commission_amount;
+    const totalTaxes = data.vat_amount + data.sales_tax_amount + data.annual_tax_amount + 
+                      data.salesperson_tax_amount + data.sales_manager_tax_amount;
+    
+    // Update summary
+    document.getElementById('preview_total_unit_price').textContent = formatCurrency(unitPrice);
+    document.getElementById('preview_total_commissions').textContent = formatCurrency(totalCommissions);
+    document.getElementById('preview_total_taxes').textContent = formatCurrency(totalTaxes);
+    document.getElementById('preview_net_company_income').innerHTML = `<strong>${formatCurrency(data.net_company_income)}</strong>`;
+    document.getElementById('preview_net_salesperson_income').textContent = formatCurrency(data.net_salesperson_income);
+    document.getElementById('preview_net_sales_manager_income').textContent = formatCurrency(data.net_sales_manager_income);
+    
+    // Update treasury information
+    document.getElementById('treasury_amount').textContent = formatCurrency(data.net_company_income);
+    document.getElementById('modal_treasury_amount').textContent = formatCurrency(data.net_company_income);
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    // Show confirmation modal if preview has been calculated
+    if (lastCalculatedData) {
+        const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        modal.show();
+    } else {
+        // Calculate first, then show modal
+        calculatePreview().then(() => {
+            if (lastCalculatedData) {
+                const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                modal.show();
+            }
+        });
+    }
+}
+
+async function submitSale() {
+    const form = document.getElementById('saleForm');
+    const submitButton = document.getElementById('submitBtn');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        showLoading(submitButton, 'جاري الحفظ...');
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        // Convert percentage rates to decimals
+        const percentageFields = ['company_commission_rate', 'salesperson_commission_rate', 
+                                'salesperson_incentive_rate', 'vat_rate', 'sales_tax_rate', 
+                                'annual_tax_rate', 'salesperson_tax_rate', 'sales_manager_tax_rate'];
+        
+        percentageFields.forEach(field => {
+            if (data[field]) {
+                data[field] = parseFloat(data[field]) / 100;
+            }
+        });
+        
+        const url = currentSale ? `/sales/api/sales/${currentSale.id}` : '/sales/api/sales';
+        const method = currentSale ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            showError(result.error);
+            return;
+        }
+        
+        showAlert(result.message, 'success');
+        
+        // Redirect to sales list after a short delay
+        setTimeout(() => {
+            window.location.href = '/sales';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error saving sale:', error);
+        showError('حدث خطأ في حفظ المعاملة');
+    } finally {
+        hideLoading(submitButton);
+        submitButton.innerHTML = originalText;
+    }
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('ar-EG', {
+        style: 'currency',
+        currency: 'EGP',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+
+// Utility functions (assuming they exist in base template)
+function showAlert(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Insert at top of page
+    const container = document.querySelector('.container-fluid') || document.body;
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function showLoading(button, text) {
+    button.disabled = true;
+    button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${text}`;
+}
+
+function hideLoading(button) {
+    button.disabled = false;
+}
+</script>
+{% endblock %}
+
