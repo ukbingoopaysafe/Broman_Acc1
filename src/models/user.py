@@ -25,7 +25,11 @@ class Role(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'description': self.description
+            'description': self.description,
+            # include permissions for API consumers so UI can show/check them
+            'permissions': [p.to_dict() for p in (self.permissions or [])],
+            # include a simple users count to display how many users have this role
+            'users_count': len(self.users) if self.users is not None else 0
         }
 
 class Permission(db.Model):

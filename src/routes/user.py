@@ -269,3 +269,11 @@ def update_role_permissions(role_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'خطأ في تحديث صلاحيات الدور: {str(e)}'}), 500
+
+
+@user_bp.route('/roles/<int:role_id>', methods=['DELETE'])
+@login_required
+@require_permission('manage_roles')
+def delete_role(role_id):
+    """Role deletion disabled application-wide. Return 403 to indicate operation is not permitted."""
+    return jsonify({'error': 'حذف الأدوار غير مسموح به عبر التطبيق.'}), 403
