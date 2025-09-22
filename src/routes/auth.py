@@ -58,6 +58,7 @@ def logout():
 @login_required
 def profile():
     """Get current user profile"""
+    # Return JSON for profile (no HTML page)
     return jsonify({
         'user': current_user.to_dict()
     }), 200
