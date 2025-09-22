@@ -208,6 +208,9 @@ def update_role_permissions(role_id):
     """Update role permissions (Admin only)"""
     try:
         role = Role.query.get_or_404(role_id)
+        # Protect Admin role from being modified. Admin must retain all permissions.
+        if role.name and role.name.lower() == 'admin':
+            return jsonify({'error': 'Cannot modify permissions for the Admin role. Admin always has all permissions.'}), 403
         data = request.get_json()
         
         if not data or 'permission_ids' not in data:
@@ -215,11 +218,11 @@ def update_role_permissions(role_id):
         
         # Get permissions
         permissions = Permission.query.filter(Permission.id.in_(data['permission_ids'])).all()
-        
+
         # Update role permissions
         role.permissions = permissions
         db.session.commit()
-        
+
         return jsonify({
             'message': 'تم تحديث صلاحيات الدور بنجاح',
             'role': role.to_dict()

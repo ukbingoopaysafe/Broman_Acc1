@@ -80,8 +80,19 @@ class User(UserMixin, db.Model):
     
     def has_permission(self, permission_name):
         """Check if user has a specific permission"""
+        # If user has no role -> no permission
         if not self.role:
             return False
+
+        # Admin role should always have all permissions regardless of role->permissions mapping
+        # Use case-insensitive check to be robust to name variations
+        try:
+            if self.role.name and self.role.name.lower() == 'admin':
+                return True
+        except Exception:
+            # In unexpected cases just fall back to explicit permission check
+            pass
+
         return any(perm.name == permission_name for perm in self.role.permissions)
     
     def is_admin(self):
