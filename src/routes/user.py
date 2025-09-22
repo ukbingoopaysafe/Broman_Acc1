@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from src.models.database import db
 from src.models.user import User, Role, Permission
+from sqlalchemy.exc import IntegrityError
 
 user_bp = Blueprint('user', __name__)
 
@@ -58,35 +59,61 @@ def create_user():
         if not data:
             return jsonify({'error': 'لا توجد بيانات'}), 400
         
-        # Validate required fields
-        required_fields = ['username', 'email', 'password', 'role_id']
+        # Validate required fields (email is optional)
+        required_fields = ['username', 'password', 'role_id']
+        # Validate required fields and provide clearer messages
         for field in required_fields:
             if not data.get(field):
+                # Log masked payload for debugging (don't log raw password)
+                dbg = {k: ('***' if k == 'password' else v) for k, v in (data.items() if isinstance(data, dict) else [])}
+                app = __import__('flask').current_app
+                app.logger.debug(f"create_user missing field '{field}' payload={dbg}")
                 return jsonify({'error': f'الحقل {field} مطلوب'}), 400
         
-        # Check if username or email already exists
+        # Check if username already exists
         if User.query.filter_by(username=data['username']).first():
             return jsonify({'error': 'اسم المستخدم موجود بالفعل'}), 400
-        
-        if User.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'البريد الإلكتروني موجود بالفعل'}), 400
+
+        # If email provided, ensure it's not already used
+        if data.get('email'):
+            if User.query.filter_by(email=data['email']).first():
+                return jsonify({'error': 'البريد الإلكتروني موجود بالفعل'}), 400
         
         # Check if role exists
-        role = Role.query.get(data['role_id'])
+        # Ensure role_id is an integer and role exists
+        try:
+            role_id = int(data['role_id'])
+        except Exception:
+            return jsonify({'error': 'معرف الدور غير صالح'}), 400
+
+        role = Role.query.get(role_id)
         if not role:
             return jsonify({'error': 'الدور المحدد غير موجود'}), 400
         
         # Create user
         user = User(
             username=data['username'],
-            email=data['email'],
-            role_id=data['role_id'],
+            email=data.get('email') or None,
+            role_id=role_id,
             is_active=data.get('is_active', True)
         )
         user.set_password(data['password'])
         
         db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError as ie:
+            # Handle older DB schema where users.email is NOT NULL.
+            msg = str(ie)
+            if 'users.email' in msg or 'NOT NULL constraint failed: users.email' in msg:
+                # Retry with empty string to satisfy NOT NULL constraint on legacy DB
+                db.session.rollback()
+                user.email = ''
+                db.session.add(user)
+                db.session.commit()
+            else:
+                db.session.rollback()
+                raise
         
         return jsonify({
             'message': 'تم إنشاء المستخدم بنجاح',
@@ -146,8 +173,19 @@ def update_user(user_id):
         
         if 'password' in data and data['password']:
             user.set_password(data['password'])
-        
-        db.session.commit()
+
+        try:
+            db.session.commit()
+        except IntegrityError as ie:
+            msg = str(ie)
+            if 'users.email' in msg or 'NOT NULL constraint failed: users.email' in msg:
+                db.session.rollback()
+                # If DB requires non-null email, set to empty string
+                user.email = ''
+                db.session.commit()
+            else:
+                db.session.rollback()
+                raise
         
         return jsonify({
             'message': 'تم تحديث المستخدم بنجاح',

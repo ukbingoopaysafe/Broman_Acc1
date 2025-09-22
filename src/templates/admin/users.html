@@ -45,10 +45,10 @@
                 <label class="form-label">اسم المستخدم</label>
                 <input type="text" class="form-control" id="username" required />
             </div>
-            <div class="mb-3">
-                <label class="form-label">البريد الإلكتروني</label>
-                <input type="email" class="form-control" id="email" required />
-            </div>
+      <div class="mb-3">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" class="form-control" id="email" />
+      </div>
             <div class="mb-3">
                 <label class="form-label">كلمة المرور</label>
                 <input type="password" class="form-control" id="password" />
@@ -139,10 +139,30 @@ async function saveUser() {
   const pw = document.getElementById('password').value;
   if (!id) payload.password = pw || 'Passw0rd!'; else if (pw) payload.password = pw;
 
-  if (!id) await fetchJSON('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-  else await fetchJSON(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-  bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-  await loadUsers();
+  // Client-side validation to give immediate feedback for required fields
+  const missing = [];
+  if (!payload.username || payload.username.trim() === '') missing.push('اسم المستخدم');
+  // Email is optional; only validate its format if provided (basic check)
+  if (payload.email && payload.email.trim() === '') payload.email = null;
+  // role_id may become NaN if selection is invalid
+  if (!Number.isInteger(payload.role_id) || isNaN(payload.role_id)) missing.push('الدور');
+  // password is required when creating a new user
+  if (!id && (!payload.password || payload.password.trim() === '')) missing.push('كلمة المرور');
+
+  if (missing.length) {
+    alert('الرجاء ملء الحقول المطلوبة: ' + missing.join(', '));
+    return;
+  }
+
+  try {
+    if (!id) await fetchJSON('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    else await fetchJSON(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+    await loadUsers();
+  } catch (err) {
+    // Show server-side validation or other errors to the user
+    alert(err.message || 'حدث خطأ أثناء حفظ المستخدم');
+  }
 }
 
 async function removeUser(id) {
