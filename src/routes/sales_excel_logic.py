@@ -242,19 +242,20 @@ def create_sale_with_excel_logic():
         
         # Create transaction record
         transaction = Transaction(
+            type='إيراد من بيع عقار',
             amount=calculations['final_company_income'],
-            transaction_type='income',
             description=f'معاملة بيع - {data["client_name"]} - {data["unit_code"]}',
-            reference_type='sale',
-            reference_id=None,  # Will be set after sale is committed
-            created_by=current_user.id
+            transaction_date=datetime.now(),
+            related_entity_type='sale',
+            related_entity_id=None,  # Will be set after sale is committed
+            user_id=current_user.id
         )
         
         db.session.add(transaction)
         db.session.flush()  # Get sale ID
         
         # Update transaction reference
-        transaction.reference_id = sale.id
+        transaction.related_entity_id = sale.id
         sale.transaction_id = transaction.id
         
         # Update treasury balance

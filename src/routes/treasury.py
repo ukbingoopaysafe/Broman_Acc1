@@ -211,9 +211,9 @@ def create_transaction():
             amount=amount,
             description=data['description'],
             transaction_date=transaction_date,
-            reference_type='manual',
-            reference_id=None,
-            created_by=current_user.id
+            related_entity_type='manual',
+            related_entity_id=None,
+            user_id=current_user.id
         )
         
         db.session.add(transaction)

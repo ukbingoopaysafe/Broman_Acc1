@@ -79,7 +79,10 @@ class Treasury(db.Model):
             type='Treasury Update',
             amount=amount,
             description=description or f'Treasury balance updated by {amount}',
-            transaction_date=datetime.utcnow()
+            transaction_date=datetime.utcnow(),
+            related_entity_type='system',
+            related_entity_id=None,
+            user_id=None
         )
         db.session.add(transaction)
         db.session.commit()
