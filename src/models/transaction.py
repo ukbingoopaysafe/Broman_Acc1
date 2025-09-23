@@ -36,8 +36,13 @@ class Transaction(db.Model):
     def create_sale_transaction(cls, sale_data, user_id=None):
         """Create a transaction for a sale"""
         # Calculate net amount for the company (total commission minus taxes and expenses)
+        base_commission = sale_data.get('total_company_commission_before_tax')
+        if base_commission is None:
+            # Fallback for new schema where we only store company_commission_amount
+            base_commission = sale_data.get('company_commission_amount', 0)
+
         net_amount = (
-            sale_data.get('total_company_commission_before_tax', 0) -
+            base_commission -
             sale_data.get('vat_amount', 0) -
             sale_data.get('sales_tax_amount', 0) -
             sale_data.get('annual_tax_amount', 0) -

@@ -34,3 +34,53 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
+        # Backfill missing columns for existing SQLite DBs when model changed but migrations
+        # were not run. This is a small, safe add-only routine: it checks the `sales` table
+        # and adds columns that are defined on the SQLAlchemy model but missing in the
+        # SQLite schema. This avoids runtime "no such column" errors.
+        try:
+            engine = db.engine
+            inspector = __import__('sqlalchemy').inspect(engine)
+            if 'sales' in inspector.get_table_names():
+                existing_cols = {c['name'] for c in inspector.get_columns('sales')}
+
+                # Define columns we expect in the sales table: mapping to SQLite column SQL
+                expected_columns = {
+                    'company_commission_rate': 'NUMERIC',
+                    'salesperson_commission_rate': 'NUMERIC',
+                    'salesperson_incentive_rate': 'NUMERIC',
+                    'vat_rate': 'NUMERIC',
+                    'sales_tax_rate': 'NUMERIC',
+                    'annual_tax_rate': 'NUMERIC',
+                    'salesperson_tax_rate': 'NUMERIC',
+                    'sales_manager_tax_rate': 'NUMERIC',
+                    'company_commission_amount': 'NUMERIC',
+                    'salesperson_commission_amount': 'NUMERIC',
+                    'salesperson_incentive_amount': 'NUMERIC',
+                    'sales_manager_commission_amount': 'NUMERIC',
+                    'vat_amount': 'NUMERIC',
+                    'sales_tax_amount': 'NUMERIC',
+                    'annual_tax_amount': 'NUMERIC',
+                    'salesperson_tax_amount': 'NUMERIC',
+                    'sales_manager_tax_amount': 'NUMERIC',
+                    'net_company_income': 'NUMERIC',
+                    'net_salesperson_income': 'NUMERIC',
+                    'net_sales_manager_income': 'NUMERIC'
+                }
+
+                missing = [col for col in expected_columns.keys() if col not in existing_cols]
+                if missing:
+                    conn = engine.connect()
+                    for col in missing:
+                        col_type = expected_columns[col]
+                        # SQLite ALTER TABLE ADD COLUMN is limited but supports adding simple columns
+                        try:
+                            conn.execute(f'ALTER TABLE sales ADD COLUMN {col} {col_type}');
+                        except Exception:
+                            # If add fails, ignore and continue — we'll surface runtime errors elsewhere
+                            pass
+                    conn.close()
+        except Exception:
+            # Don't break app initialization on best-effort migration attempt
+            pass
+
