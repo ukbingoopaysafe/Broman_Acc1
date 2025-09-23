@@ -38,7 +38,7 @@ def sales_list():
 @require_permission('create_sales')
 def new_sale():
     """New sale page with enhanced form"""
-    return render_template("sales/form_enhanced.html", sale=None)
+    return render_template("sales/form_new.html", sale=None)
 
 @sales_bp.route('/<int:sale_id>')
 @login_required
@@ -54,7 +54,7 @@ def sale_detail(sale_id):
 def edit_sale(sale_id):
     """Edit sale page with enhanced form"""
     sale = Sale.query.get_or_404(sale_id)
-    return render_template("sales/form_enhanced.html", sale=sale)
+    return render_template("sales/form_new.html", sale=sale)
 
 # API Routes
 @sales_bp.route('/api/sales', methods=['GET'])
@@ -115,24 +115,22 @@ def get_sales():
     except Exception as e:
         return jsonify({'error': f'خطأ في جلب المبيعات: {str(e)}'}), 500
 
-from src.routes.sales_new import create_sale as create_sale_new
-from src.routes.sales_new import calculate_preview as calculate_preview_api
+from src.routes.sales_excel_logic import create_sale_with_excel_logic, update_sale_with_excel_logic, calculate_preview_excel_logic
 
 @sales_bp.route("/api/sales", methods=["POST"])
 @login_required
 @require_permission("create_sales")
 def create_sale():
-    """Create new sale with enhanced calculation logic"""
-    return create_sale_new()
+    """Create new sale with Excel calculation logic"""
+    return create_sale_with_excel_logic()
 
 
-# Expose calculate-preview endpoint implemented in sales_new through this blueprint
-# so client requests to /sales/api/calculate-preview reach the handler (fixes 405)
+# Expose calculate-preview endpoint implemented with Excel logic
 @sales_bp.route('/api/calculate-preview', methods=['POST'])
 @login_required
 @require_permission('view_sales')
 def calculate_preview():
-    return calculate_preview_api()
+    return calculate_preview_excel_logic()
 
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['GET'])
 @login_required
@@ -145,14 +143,12 @@ def get_sale(sale_id):
     except Exception as e:
         return jsonify({'error': f'خطأ في جلب معاملة البيع: {str(e)}'}), 500
 
-from src.routes.sales_new import update_sale as update_sale_new
-
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['PUT'])
 @login_required
 @require_permission('edit_sales')
 def update_sale(sale_id):
-    """Update sale with enhanced calculation logic"""
-    return update_sale_new(sale_id)
+    """Update sale with Excel calculation logic"""
+    return update_sale_with_excel_logic(sale_id)
 
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['DELETE'])
 @login_required
