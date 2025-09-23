@@ -38,7 +38,7 @@ def sales_list():
 @require_permission('create_sales')
 def new_sale():
     """New sale page"""
-    return render_template('sales/form.html', sale=None)
+    return render_template('sales/form_new.html', sale=None)
 
 @sales_bp.route('/<int:sale_id>')
 @login_required
@@ -54,7 +54,7 @@ def sale_detail(sale_id):
 def edit_sale(sale_id):
     """Edit sale page"""
     sale = Sale.query.get_or_404(sale_id)
-    return render_template('sales/form.html', sale=sale)
+    return render_template('sales/form_new.html', sale=sale)
 
 # API Routes
 @sales_bp.route('/api/sales', methods=['GET'])

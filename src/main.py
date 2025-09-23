@@ -41,12 +41,14 @@ app.register_blueprint(user_bp, url_prefix='/api')
 from src.routes.auth import auth_bp
 from src.routes.dashboard import dashboard_bp
 from src.routes.sales import sales_bp
+from src.routes.sales_api import sales_api_bp
 from src.routes.treasury import treasury_bp
 from src.routes.user import admin_pages_bp
 from src.routes.reports import reports_bp
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(sales_bp, url_prefix='/sales')
+app.register_blueprint(sales_api_bp, url_prefix='/sales')
 app.register_blueprint(treasury_bp, url_prefix='/treasury')
 app.register_blueprint(admin_pages_bp)
 app.register_blueprint(reports_bp, url_prefix='/reports')

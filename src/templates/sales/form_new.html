@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %} - BroMan
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculation-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .calculation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .calculation-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .calculation-item:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        background: rgba(40, 167, 69, 0.1);
+        margin: 8px -16px -16px -16px;
+        padding: 12px 16px;
+        border-radius: 0 0 12px 12px;
+    }
+    
+    .calculation-label {
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    
+    .calculation-value {
+        font-weight: 600;
+        color: #212529;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    .section-title {
+        color: #495057;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #007bff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .compact-form .form-control, .compact-form .form-select {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .compact-form .form-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 4px;
+    }
+    
+    .live-calculations {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+    
+    .currency-input {
+        position: relative;
+    }
+    
+    .currency-input::before {
+        content: 'ج.م';
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.85rem;
+        z-index: 10;
+        pointer-events: none;
+    }
+    
+    .currency-input input {
+        padding-left: 45px;
+    }
+    
+    .highlight-total {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        font-size: 1.1rem;
+    }
+    
+    .tax-section {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        color: white;
+    }
+    
+    .commission-section {
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .live-calculations {
+            position: static;
+            margin-top: 20px;
+        }
+        
+        .calculation-card {
+            margin-bottom: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-house-door text-primary"></i>
+                    {% if sale %}تعديل معاملة البيع{% else %}إضافة معاملة بيع جديدة{% endif %}
+                </h1>
+                <a href="/sales" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                    العودة للقائمة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Form Section -->
+        <div class="col-lg-7">
+            <form id="saleForm" class="compact-form" novalidate>
+                {% if sale %}
+                <input type="hidden" id="saleId" value="{{ sale.id }}">
+                {% endif %}
+                
+                <!-- Client and Unit Information -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="bi bi-person-circle text-primary"></i>
+                        معلومات العميل والوحدة
+                    </h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="client_name" class="form-label">اسم العميل <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="client_name" name="client_name" 
+                                   value="{% if sale %}{{ sale.client_name }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال اسم العميل</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unit_code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="unit_code" name="unit_code" 
+                                   value="{% if sale %}{{ sale.unit_code }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال كود الوحدة</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="project_name" class="form-label">اسم المشروع <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="project_name" name="project_name" 
+                                   value="{% if sale %}{{ sale.project_name }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال اسم المشروع</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="property_type" class="form-label">نوع العقار <span class="text-danger">*</span></label>
+                            <select class="form-select" id="property_type" name="property_type" required>
+                                <option value="">اختر نوع العقار</option>
+                            </select>
+                            <div class="invalid-feedback">يرجى اختيار نوع العقار</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unit_price" class="form-label">سعر الوحدة <span class="text-danger">*</span></label>
+                            <div class="currency-input">
+                                <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                       value="{% if sale %}{{ sale.unit_price }}{% endif %}" 
+                                       step="0.01" min="0" required>
+                            </div>
+                            <div class="invalid-feedback">يرجى إدخال سعر الوحدة</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sale_date" class="form-label">تاريخ البيع <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="sale_date" name="sale_date" 
+                                   value="{% if sale %}{{ sale.sale_date }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال تاريخ البيع</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sales Team Information -->
+                <div class="form-section">
+                    <h6 class="section-title">
+                        <i class="bi bi-people text-info"></i>
+                        معلومات فريق المبيعات
+                    </h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="salesperson_name" class="form-label">مندوب المبيعات</label>
+                            <input type="text" class="form-control" id="salesperson_name" name="salesperson_name" 
+                                   value="{% if sale %}{{ sale.salesperson_name }}{% endif %}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sales_manager_name" class="form-label">مدير المبيعات</label>
+                            <input type="text" class="form-control" id="sales_manager_name" name="sales_manager_name" 
+                                   value="{% if sale %}{{ sale.sales_manager_name }}{% endif %}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="notes" class="form-label">ملاحظات</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2">{% if sale %}{{ sale.notes }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            <small><i class="bi bi-info-circle"></i> الحسابات تتم تلقائياً عند إدخال البيانات</small>
+                        </div>
+                        <div>
+                            <a href="/sales" class="btn btn-secondary me-2">إلغاء</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if sale %}تحديث المعاملة{% else %}حفظ المعاملة{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Live Calculations Section -->
+        <div class="col-lg-5">
+            <div class="live-calculations">
+                <!-- Company Commission Section -->
+                <div class="calculation-card commission-section mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-white mb-3">
+                            <i class="bi bi-building"></i>
+                            عمولات الشركة
+                        </h6>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي عمولة الشركة بدون ضرائب:</span>
+                            <span class="calculation-value text-white" id="calc_company_commission_gross">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي مبلغ العمولة بعد 14%:</span>
+                            <span class="calculation-value text-white" id="calc_company_commission_after_vat">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي المبلغ المسلم للشركة بعد 5%:</span>
+                            <span class="calculation-value text-white" id="calc_company_after_sales_tax">0.00 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Taxes Section -->
+                <div class="calculation-card tax-section mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-white mb-3">
+                            <i class="bi bi-receipt"></i>
+                            الضرائب والرسوم
+                        </h6>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي القيمة المضافة 14%:</span>
+                            <span class="calculation-value text-white" id="calc_vat_amount">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي ضريبة المبيعات 5%:</span>
+                            <span class="calculation-value text-white" id="calc_sales_tax_amount">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي ضريبة 19%:</span>
+                            <span class="calculation-value text-white" id="calc_total_tax_19">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي الضريبة السنوية 22.5%:</span>
+                            <span class="calculation-value text-white" id="calc_annual_tax_amount">0.00 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Salesperson Section -->
+                <div class="calculation-card mb-3" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);">
+                    <div class="card-body">
+                        <h6 class="card-title text-white mb-3">
+                            <i class="bi bi-person-badge"></i>
+                            عمولات المندوب
+                        </h6>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي الحافز المسلم للسلز:</span>
+                            <span class="calculation-value text-white" id="calc_salesperson_incentive">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">عمولة السيلز:</span>
+                            <span class="calculation-value text-white" id="calc_salesperson_commission">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي الضريبة 19% على السلز:</span>
+                            <span class="calculation-value text-white" id="calc_salesperson_tax">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي المبلغ المسلم للسلز:</span>
+                            <span class="calculation-value text-white" id="calc_salesperson_net">0.00 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Management Section -->
+                <div class="calculation-card mb-3" style="background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%);">
+                    <div class="card-body">
+                        <h6 class="card-title text-white mb-3">
+                            <i class="bi bi-person-gear"></i>
+                            عمولة الإدارة
+                        </h6>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">عمولة مدير المبيعات:</span>
+                            <span class="calculation-value text-white" id="calc_sales_manager_commission">0.00 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Final Results Section -->
+                <div class="calculation-card highlight-total">
+                    <div class="card-body">
+                        <h6 class="card-title text-white mb-3">
+                            <i class="bi bi-calculator"></i>
+                            النتائج النهائية
+                        </h6>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">اجمالي صافي مبلغ الشركة:</span>
+                            <span class="calculation-value text-white" id="calc_company_net_before_annual">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white-50">صافي دخل الشركة بعد كل الضرائب:</span>
+                            <span class="calculation-value text-white" id="calc_company_final_net">0.00 ج.م</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span class="calculation-label text-white">اجمالي صافي مبلغ الشركة المتاح:</span>
+                            <span class="calculation-value text-white" id="calc_company_available">0.00 ج.م</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let propertyTypes = [];
+let currentSale = {% if sale %}{{ sale.to_dict() | tojson }}{% else %}null{% endif %};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadPropertyTypes();
+    
+    // Setup form validation
+    const form = document.getElementById('saleForm');
+    form.addEventListener('submit', handleFormSubmit);
+    
+    // Auto-calculate on any input change
+    const inputs = ['property_type', 'unit_price'];
+    inputs.forEach(inputId => {
+        const element = document.getElementById(inputId);
+        if (element) {
+            element.addEventListener('change', calculateAll);
+            element.addEventListener('input', debounce(calculateAll, 300));
+        }
+    });
+    
+    // Set default date to today if creating new sale
+    if (!currentSale) {
+        document.getElementById('sale_date').value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Initial calculation
+    setTimeout(calculateAll, 100);
+});
+
+async function loadPropertyTypes() {
+    try {
+        const response = await fetch('/sales/api/property-types');
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        propertyTypes = data;
+        const select = document.getElementById('property_type');
+        
+        data.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.property_type;
+            option.textContent = type.property_type;
+            select.appendChild(option);
+        });
+        
+        // Set current value if editing
+        if (currentSale) {
+            select.value = currentSale.property_type;
+            calculateAll();
+        }
+        
+    } catch (error) {
+        console.error('Error loading property types:', error);
+        showError('حدث خطأ في تحميل أنواع العقارات');
+    }
+}
+
+function calculateAll() {
+    const propertyType = document.getElementById('property_type').value;
+    const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+    
+    if (!propertyType || unitPrice <= 0) {
+        resetCalculations();
+        return;
+    }
+    
+    // Use the new API for calculations
+    fetch('/sales/api/calculate-preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            property_type: propertyType,
+            unit_price: unitPrice
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Calculation error:', data.error);
+            resetCalculations();
+            return;
+        }
+        
+        if (data.success && data.calculations) {
+            const calc = data.calculations;
+            
+            // Update all displays using the new calculation results
+            updateCalculationDisplay('calc_company_commission_gross', calc.company_commission_gross);
+            updateCalculationDisplay('calc_company_commission_after_vat', calc.company_commission_after_vat);
+            updateCalculationDisplay('calc_company_after_sales_tax', calc.company_after_sales_tax);
+            
+            updateCalculationDisplay('calc_vat_amount', calc.vat_amount);
+            updateCalculationDisplay('calc_sales_tax_amount', calc.sales_tax_amount);
+            updateCalculationDisplay('calc_total_tax_19', calc.total_tax_19_percent);
+            updateCalculationDisplay('calc_annual_tax_amount', calc.annual_tax_amount);
+            
+            updateCalculationDisplay('calc_salesperson_incentive', calc.salesperson_incentive_total);
+            updateCalculationDisplay('calc_salesperson_commission', calc.salesperson_commission_total);
+            updateCalculationDisplay('calc_salesperson_tax', calc.salesperson_tax_19_percent);
+            updateCalculationDisplay('calc_salesperson_net', calc.salesperson_net_amount);
+            
+            updateCalculationDisplay('calc_sales_manager_commission', calc.sales_manager_commission);
+            
+            updateCalculationDisplay('calc_company_net_before_annual', calc.company_net_after_deductions);
+            updateCalculationDisplay('calc_company_final_net', calc.company_final_net_income);
+            updateCalculationDisplay('calc_company_available', calc.company_available_amount);
+        }
+    })
+    .catch(error => {
+        console.error('Error calculating:', error);
+        resetCalculations();
+    });
+}
+
+function updateCalculationDisplay(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = formatCurrencyNew(value);
+    }
+}
+
+function resetCalculations() {
+    const calculationElements = [
+        'calc_company_commission_gross', 'calc_company_commission_after_vat', 'calc_company_after_sales_tax',
+        'calc_vat_amount', 'calc_sales_tax_amount', 'calc_total_tax_19', 'calc_annual_tax_amount',
+        'calc_salesperson_incentive', 'calc_salesperson_commission', 'calc_salesperson_tax', 'calc_salesperson_net',
+        'calc_sales_manager_commission', 'calc_company_net_before_annual', 'calc_company_final_net', 'calc_company_available'
+    ];
+    
+    calculationElements.forEach(elementId => {
+        updateCalculationDisplay(elementId, 0);
+    });
+}
+
+function formatCurrencyNew(amount) {
+    if (amount === 0) return '0 ج.م';
+    
+    // Format number with proper Arabic locale
+    const formatted = new Intl.NumberFormat('ar-EG', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(Math.abs(amount));
+    
+    return `${formatted} ج.م`;
+}
+
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        showLoading(submitButton, 'جاري الحفظ...');
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        const url = currentSale ? `/sales/api/sales/${currentSale.id}` : '/sales/api/sales';
+        const method = currentSale ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            showError(result.error);
+            return;
+        }
+        
+        showAlert(result.message, 'success');
+        
+        // Redirect to sales list after a short delay
+        setTimeout(() => {
+            window.location.href = '/sales';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error saving sale:', error);
+        showError('حدث خطأ في حفظ المعاملة');
+    } finally {
+        hideLoading(submitButton);
+        submitButton.innerHTML = originalText;
+    }
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+// Debounce function to limit calculation frequency
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}
+
