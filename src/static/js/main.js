@@ -8,13 +8,13 @@ let userPermissions = [];
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication status
     checkAuthStatus();
-    
+
     // Initialize tooltips
     initializeTooltips();
-    
+
     // Initialize form validation
     initializeFormValidation();
-    
+
     // Add loading states to forms
     addLoadingStates();
 });
@@ -24,7 +24,7 @@ async function checkAuthStatus() {
     try {
         const response = await fetch('/auth/check-auth');
         const data = await response.json();
-        
+
         if (data.authenticated) {
             currentUser = data.user;
             await loadUserPermissions();
@@ -38,7 +38,7 @@ async function loadUserPermissions() {
     try {
         const response = await fetch('/dashboard/api/user-permissions');
         const data = await response.json();
-        
+
         if (!data.error) {
             userPermissions = data.permissions;
             updateUIBasedOnPermissions();
@@ -72,7 +72,7 @@ async function logout() {
                     'Content-Type': 'application/json',
                 }
             });
-            
+
             if (response.ok) {
                 window.location.href = '/auth/login';
             } else {
@@ -88,7 +88,7 @@ async function logout() {
 // UI Helper functions
 function showAlert(message, type = 'info', duration = 5000) {
     const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
-    
+
     const alertId = 'alert-' + Date.now();
     const alertHTML = `
         <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -97,9 +97,9 @@ function showAlert(message, type = 'info', duration = 5000) {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
-    
+
     alertContainer.insertAdjacentHTML('beforeend', alertHTML);
-    
+
     // Auto-dismiss after duration
     if (duration > 0) {
         setTimeout(() => {
@@ -187,13 +187,26 @@ function initializeTooltips() {
 
 // Utility functions
 function formatCurrency(amount, currency = 'EGP') {
+    // Handle null, undefined, and string 'None' values
+    if (amount === null || amount === undefined || amount === 'None' || amount === '') {
+        amount = 0;
+    }
+
+    // Convert to number and handle NaN
+    const numAmount = Number(amount);
+    if (isNaN(numAmount)) {
+        amount = 0;
+    } else {
+        amount = numAmount;
+    }
+
     // English numerals, hide trailing zeros (up to 2 decimals)
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
-    }).format(Number(amount || 0));
+    }).format(amount);
 }
 
 function formatNumber(value, options = {}) {
@@ -236,17 +249,17 @@ async function apiRequest(url, options = {}) {
             'Content-Type': 'application/json',
         },
     };
-    
+
     const mergedOptions = { ...defaultOptions, ...options };
-    
+
     try {
         const response = await fetch(url, mergedOptions);
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
-        
+
         return data;
     } catch (error) {
         console.error('API request failed:', error);
@@ -264,7 +277,7 @@ function createDataTable(tableId, options = {}) {
         pageLength: 25,
         order: [[0, 'desc']]
     };
-    
+
     return $(tableId).DataTable({ ...defaultOptions, ...options });
 }
 
@@ -281,13 +294,13 @@ function exportToExcel(data, filename) {
 
 function convertToCSV(data) {
     if (!data || data.length === 0) return '';
-    
+
     const headers = Object.keys(data[0]);
     const csvContent = [
         headers.join(','),
         ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
     ].join('\n');
-    
+
     return csvContent;
 }
 
@@ -307,7 +320,7 @@ function downloadFile(content, filename, contentType) {
 function printElement(elementId) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html>
@@ -351,7 +364,7 @@ function loadFromLocalStorage(key, defaultValue = null) {
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
+
     document.documentElement.setAttribute('data-theme', newTheme);
     saveToLocalStorage('theme', newTheme);
 }
@@ -363,4 +376,3 @@ function loadTheme() {
 
 // Initialize theme on load
 loadTheme();
-

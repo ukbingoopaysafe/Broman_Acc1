@@ -65,15 +65,13 @@ class Sale(db.Model):
     annual_tax_rate = db.Column(db.Numeric(5, 4), nullable=True, default=0.225)  # Default 22.5%
     salesperson_tax_rate = db.Column(db.Numeric(5, 4), nullable=True, default=0)
     sales_manager_tax_rate = db.Column(db.Numeric(5, 4), nullable=True, default=0)
+    sales_manager_commission_rate = db.Column(db.Numeric(5, 4), nullable=True, default=0.003)  # Default 0.3%
 
     # Calculated amounts (based on Excel logic)
     company_commission_amount = db.Column(db.Numeric(15, 2), nullable=False)
     salesperson_commission_amount = db.Column(db.Numeric(15, 2), nullable=True, default=0)
     salesperson_incentive_amount = db.Column(db.Numeric(15, 2), nullable=True, default=0)
     sales_manager_commission_amount = db.Column(db.Numeric(15, 2), nullable=True, default=0)
-    # Legacy support columns still present in existing SQLite (keep optional)
-    total_company_commission_before_tax = db.Column(db.Numeric(15, 2), nullable=True, default=0)
-    total_salesperson_incentive_paid = db.Column(db.Numeric(15, 2), nullable=True, default=0)
 
     # Tax amounts
     vat_amount = db.Column(db.Numeric(15, 2), nullable=True, default=0)
@@ -118,12 +116,11 @@ class Sale(db.Model):
             'annual_tax_rate': float(self.annual_tax_rate or 0),
             'salesperson_tax_rate': float(self.salesperson_tax_rate or 0),
             'sales_manager_tax_rate': float(self.sales_manager_tax_rate or 0),
+            'sales_manager_commission_rate': float(self.sales_manager_commission_rate or 0),
             'company_commission_amount': float(self.company_commission_amount or 0),
             'salesperson_commission_amount': float(self.salesperson_commission_amount or 0),
             'salesperson_incentive_amount': float(self.salesperson_incentive_amount or 0),
             'sales_manager_commission_amount': float(self.sales_manager_commission_amount or 0),
-            'total_company_commission_before_tax': float(self.total_company_commission_before_tax or 0),
-            'total_salesperson_incentive_paid': float(self.total_salesperson_incentive_paid or 0),
             'vat_amount': float(self.vat_amount or 0),
             'sales_tax_amount': float(self.sales_tax_amount or 0),
             'annual_tax_amount': float(self.annual_tax_amount or 0),
@@ -198,8 +195,6 @@ class Sale(db.Model):
             'salesperson_commission_amount': salesperson_commission_amount,
             'salesperson_incentive_amount': salesperson_incentive_amount,
             'sales_manager_commission_amount': sales_manager_commission_amount,
-            'total_company_commission_before_tax': company_commission_amount,
-            'total_salesperson_incentive_paid': salesperson_incentive_amount,
             'vat_amount': vat_amount,
             'sales_tax_amount': sales_tax_amount,
             'annual_tax_amount': annual_tax_amount,

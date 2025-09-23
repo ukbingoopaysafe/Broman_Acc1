@@ -11,32 +11,6 @@ from sqlalchemy import func, desc
 
 sales_bp = Blueprint('sales', __name__)
 
-def _to_decimal(value, default=0):
-    """Robustly convert incoming form values to Decimal.
-    - Treat None/"" as default
-    - Strip spaces, commas, percent signs
-    - Accept numeric types directly
-    """
-    if value is None or value == "":
-        return Decimal(str(default))
-    if isinstance(value, (int, float, Decimal)):
-        return Decimal(str(value))
-    if isinstance(value, str):
-        cleaned = value.strip()
-        # Replace common formatting
-        cleaned = cleaned.replace(',', '').replace('%', '')
-        # Convert Arabic numerals to Western if present
-        arabic_digits = '٠١٢٣٤٥٦٧٨٩'
-        for i, d in enumerate(arabic_digits):
-            cleaned = cleaned.replace(d, str(i))
-        if cleaned == '':
-            return Decimal(str(default))
-        try:
-            return Decimal(cleaned)
-        except Exception:
-            return Decimal(str(default))
-    return Decimal(str(default))
-
 def require_permission(permission_name):
     """Decorator to require specific permission"""
     def decorator(f):
@@ -174,16 +148,17 @@ def create_sale():
             return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
 
         # Extract rates from form data (convert from percentage to decimal)
-        unit_price = _to_decimal(data.get('unit_price'), 0)
-        company_commission_rate = _to_decimal(data.get('company_commission_rate'), 0)
-        salesperson_commission_rate = _to_decimal(data.get('salesperson_commission_rate'), 0)
-        salesperson_incentive_rate = _to_decimal(data.get('salesperson_incentive_rate'), 0)
-        additional_incentive_tax_rate = _to_decimal(data.get('additional_incentive_tax_rate'), 0)
-        vat_rate = _to_decimal(data.get('vat_rate'), 0.14)
-        sales_tax_rate = _to_decimal(data.get('sales_tax_rate'), 0.05)
-        annual_tax_rate = _to_decimal(data.get('annual_tax_rate'), 0.225)
-        salesperson_tax_rate = _to_decimal(data.get('salesperson_tax_rate'), 0)
-        sales_manager_tax_rate = _to_decimal(data.get('sales_manager_tax_rate'), 0)
+        unit_price = Decimal(str(data['unit_price']))
+        company_commission_rate = Decimal(str(data['company_commission_rate']))
+        salesperson_commission_rate = Decimal(str(data.get('salesperson_commission_rate', 0)))
+        salesperson_incentive_rate = Decimal(str(data.get('salesperson_incentive_rate', 0)))
+        additional_incentive_tax_rate = Decimal(str(data.get('additional_incentive_tax_rate') or 0))
+        vat_rate = Decimal(str(data.get('vat_rate', 0.14)))
+        sales_tax_rate = Decimal(str(data.get('sales_tax_rate', 0.05)))
+        annual_tax_rate = Decimal(str(data.get('annual_tax_rate', 0.225)))
+        salesperson_tax_rate = Decimal(str(data.get('salesperson_tax_rate', 0)))
+        sales_manager_tax_rate = Decimal(str(data.get('sales_manager_tax_rate', 0)))
+        sales_manager_commission_rate = Decimal(str(data.get('sales_manager_commission_rate', 0.003)))  # Default 0.3%
 
         # Calculate all amounts using the enhanced logic
         calculated_amounts = Sale.calculate_sale_amounts(
@@ -235,13 +210,12 @@ def create_sale():
             annual_tax_rate=annual_tax_rate,
             salesperson_tax_rate=salesperson_tax_rate,
             sales_manager_tax_rate=sales_manager_tax_rate,
+            sales_manager_commission_rate=sales_manager_commission_rate,
 
             # Store calculated amounts
             company_commission_amount=calculated_amounts['company_commission_amount'],
             salesperson_commission_amount=calculated_amounts['salesperson_commission_amount'],
             salesperson_incentive_amount=calculated_amounts['salesperson_incentive_amount'],
-            total_company_commission_before_tax=calculated_amounts['total_company_commission_before_tax'],
-            total_salesperson_incentive_paid=calculated_amounts['total_salesperson_incentive_paid'],
             sales_manager_commission_amount=calculated_amounts['sales_manager_commission_amount'],
             vat_amount=calculated_amounts['vat_amount'],
             sales_tax_amount=calculated_amounts['sales_tax_amount'],
@@ -340,7 +314,7 @@ def update_sale(sale_id):
         rate_fields = [
             'company_commission_rate', 'salesperson_commission_rate',
             'salesperson_incentive_rate', 'additional_incentive_tax_rate', 'vat_rate', 'sales_tax_rate',
-            'annual_tax_rate', 'salesperson_tax_rate', 'sales_manager_tax_rate'
+            'annual_tax_rate', 'salesperson_tax_rate', 'sales_manager_tax_rate', 'sales_manager_commission_rate'
         ]
 
         for field in rate_fields:
@@ -446,16 +420,17 @@ def calculate_preview():
             return jsonify({'error': 'سعر الوحدة ونسبة عمولة الشركة مطلوبان'}), 400
 
         # Extract rates from form data
-        unit_price = _to_decimal(data.get('unit_price'), 0)
-        company_commission_rate = _to_decimal(data.get('company_commission_rate'), 0)
-        salesperson_commission_rate = _to_decimal(data.get('salesperson_commission_rate'), 0)
-        salesperson_incentive_rate = _to_decimal(data.get('salesperson_incentive_rate'), 0)
-        additional_incentive_tax_rate = _to_decimal(data.get('additional_incentive_tax_rate'), 0)
-        vat_rate = _to_decimal(data.get('vat_rate'), 0.14)
-        sales_tax_rate = _to_decimal(data.get('sales_tax_rate'), 0.05)
-        annual_tax_rate = _to_decimal(data.get('annual_tax_rate'), 0.225)
-        salesperson_tax_rate = _to_decimal(data.get('salesperson_tax_rate'), 0)
-        sales_manager_tax_rate = _to_decimal(data.get('sales_manager_tax_rate'), 0)
+        unit_price = Decimal(str(data['unit_price']))
+        company_commission_rate = Decimal(str(data['company_commission_rate']))
+        salesperson_commission_rate = Decimal(str(data.get('salesperson_commission_rate', 0)))
+        salesperson_incentive_rate = Decimal(str(data.get('salesperson_incentive_rate', 0)))
+        additional_incentive_tax_rate = Decimal(str(data.get('additional_incentive_tax_rate') or 0))
+        vat_rate = Decimal(str(data.get('vat_rate', 0.14)))
+        sales_tax_rate = Decimal(str(data.get('sales_tax_rate', 0.05)))
+        annual_tax_rate = Decimal(str(data.get('annual_tax_rate', 0.225)))
+        salesperson_tax_rate = Decimal(str(data.get('salesperson_tax_rate', 0)))
+        sales_manager_tax_rate = Decimal(str(data.get('sales_manager_tax_rate', 0)))
+        sales_manager_commission_rate = Decimal(str(data.get('sales_manager_commission_rate', 0.003)))  # Default 0.3%
 
         # Calculate all amounts
         calculated_amounts = Sale.calculate_sale_amounts(

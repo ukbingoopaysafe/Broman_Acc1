@@ -116,6 +116,7 @@ def get_sales():
         return jsonify({'error': f'خطأ في جلب المبيعات: {str(e)}'}), 500
 
 from src.routes.sales_new import create_sale as create_sale_new
+from src.routes.sales_new import calculate_preview as calculate_preview_api
 
 @sales_bp.route("/api/sales", methods=["POST"])
 @login_required
@@ -123,6 +124,15 @@ from src.routes.sales_new import create_sale as create_sale_new
 def create_sale():
     """Create new sale with enhanced calculation logic"""
     return create_sale_new()
+
+
+# Expose calculate-preview endpoint implemented in sales_new through this blueprint
+# so client requests to /sales/api/calculate-preview reach the handler (fixes 405)
+@sales_bp.route('/api/calculate-preview', methods=['POST'])
+@login_required
+@require_permission('view_sales')
+def calculate_preview():
+    return calculate_preview_api()
 
 @sales_bp.route('/api/sales/<int:sale_id>', methods=['GET'])
 @login_required

@@ -388,14 +388,45 @@ async function calculatePreview() {
         // Call backend API for calculation
         const response = await fetch('/sales/api/calculate-preview', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(data)
         });
-        
-        const result = await response.json();
-        
+
+        // If server responded with non-OK status, try to read a helpful message
+        if (!response.ok) {
+            let text = await response.text();
+            // Attempt to extract JSON error if present
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.error) {
+                    showError(parsed.error);
+                } else {
+                    showError(text);
+                }
+            } catch (e) {
+                // Not JSON - show raw response (likely HTML login page or error page)
+                showError('خطاء من الخادم: ' + (text.slice(0, 200) || response.statusText));
+            }
+
+            document.getElementById('previewStatus').textContent = 'خطأ';
+            document.getElementById('previewStatus').className = 'badge bg-danger ms-2';
+            return;
+        }
+
+        // Parse JSON body safely
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            showError('استجابة الخادم غير صالحة (لم يتمكن من قراءة JSON)');
+            document.getElementById('previewStatus').textContent = 'خطأ';
+            document.getElementById('previewStatus').className = 'badge bg-danger ms-2';
+            return;
+        }
+
         if (result.error) {
             showError(result.error);
             document.getElementById('previewStatus').textContent = 'خطأ';
@@ -508,14 +539,33 @@ async function submitSale() {
         
         const response = await fetch(url, {
             method: method,
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(data)
         });
-        
-        const result = await response.json();
-        
+
+        if (!response.ok) {
+            let text = await response.text();
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.error) showError(parsed.error);
+                else showError(text);
+            } catch (e) {
+                showError('خطاء من الخادم أثناء الحفظ: ' + (text.slice(0,200) || response.statusText));
+            }
+            return;
+        }
+
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            showError('استجابة الخادم غير صالحة (لم يتمكن من قراءة JSON)');
+            return;
+        }
+
         if (result.error) {
             showError(result.error);
             return;
