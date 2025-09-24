@@ -125,22 +125,33 @@
 <!-- Sale Detail Modal (Redesigned Invoice-style) -->
 <style>
     /* Scoped modal styles for invoice-style layout */
+    /* Modal sizing and centering */
     #saleDetailModal .modal-dialog {
-        max-width: 900px; /* approx 70% on many viewports, but constrained */
+        max-width: 900px; /* widened as requested */
         width: 90%;
-        margin: 1.5rem auto;
+        margin: 0 auto; /* center horizontally */
+        display: flex;
+        align-items: center; /* vertical centering */
+        min-height: 0;
     }
-    #saleDetailModal .modal-content { border-radius: 8px; overflow: hidden; }
+    #saleDetailModal .modal-content {
+        border-radius: 8px;
+        overflow: visible;
+        height: auto; /* dynamic height based on content */
+        max-height: 90vh; /* don't exceed viewport */
+        display: flex;
+        flex-direction: column;
+    }
+    /* Ensure the modal body scrolls internally if needed (small screens) */
     #saleDetailModal .modal-body {
-        max-height: calc(100vh - 260px);
-        overflow: auto;
+        overflow-y: auto;
         padding: 0; /* handled by inner container */
     }
 
     /* Invoice container */
     .invoice-wrap { display: grid; grid-template-rows: auto 1fr auto; min-height: 480px; }
     .invoice-header { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e9eef5; }
-    .invoice-title { font-size: 1.15rem; font-weight: 700; color: #0d6efd; }
+    .invoice-title { font-size: 1.15rem; font-weight: 700; color: #0d6efd; margin: 0; }
     .invoice-close { background: transparent; border: none; font-size: 1.4rem; line-height: 1; }
 
     .invoice-body { padding: 22px; display: grid; grid-template-columns: 40% 60%; gap: 20px; align-items: start; }
@@ -149,7 +160,7 @@
     .info-card { background: #fff; border-radius: 8px; box-shadow: 0 4px 14px rgba(44,62,80,0.06); padding: 16px; margin-bottom: 12px; }
     .info-card h6 { margin: 0 0 10px 0; font-size: 0.95rem; color: #223354; }
     .info-table { width: 100%; border-collapse: collapse; }
-    .info-table td { padding: 6px 4px; vertical-align: top; }
+    .info-table td { padding: 4px 4px; vertical-align: top; }
     .info-table td:first-child { color: #636e7b; width: 40%; }
 
     /* Right column financial summary */
@@ -172,6 +183,33 @@
 
     /* Modal footer buttons */
     .invoice-footer { padding: 14px 20px; border-top: 1px solid #e9eef5; display:flex; justify-content:flex-end; gap:10px; }
+
+    /* Print-specific styles: create a clean invoice for printing */
+    @media print {
+        /* Hide everything except the invoice-wrap */
+        body * { visibility: hidden; }
+        .invoice-wrap, .invoice-wrap * { visibility: visible; }
+        .invoice-wrap { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+
+        /* Remove interactive elements */
+        .invoice-close, .modal-footer, .invoice-footer, .btn { display: none !important; }
+
+        /* Single column layout for print */
+        .invoice-body { grid-template-columns: 1fr !important; gap: 12px !important; padding: 0 8mm 0 8mm !important; }
+
+        /* Simplify card styles for printing */
+        .info-card, .finance-card, .final-totals { box-shadow: none !important; background: #fff !important; border: none !important; }
+        .info-card, .finance-card { padding: 6px 0 !important; }
+
+        /* Ensure full content flows naturally, no clipping */
+        #saleDetailModal .modal-content { max-height: none !important; overflow: visible !important; }
+
+        /* Professional header for printed page */
+        .print-header { display: block; text-align: center; margin-bottom: 8px; font-weight: 700; }
+
+        /* Avoid breaking inside cards where possible */
+        .info-card, .finance-card { page-break-inside: avoid; }
+    }
 
     /* Responsive adjustments */
     @media (max-width: 900px) {
@@ -205,6 +243,7 @@
             </div>
             <div class="modal-footer" style="background:transparent;border-top:0;">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" onclick="printSale()"><i class="bi bi-printer"></i> طباعة</button>
                 <div id="saleDetailActions" style="display:inline-block;margin-left:8px;"></div>
             </div>
         </div>
@@ -538,6 +577,41 @@ function renderSaleDetail(sale) {
     }
     
     actions.innerHTML = actionsHTML;
+}
+
+function printSale() {
+    // Clone the invoice content and open in a new window for printing
+    const invoice = document.querySelector('.invoice-wrap');
+    if (!invoice) {
+        alert('لا يوجد محتوى للطباعة');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,width=900');
+    const doc = printWindow.document;
+    doc.open();
+    doc.write('<!doctype html><html><head><meta charset="utf-8"><title>فاتورة معاملة</title>');
+    // Copy stylesheet links
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).forEach(link => {
+        doc.write(link.outerHTML);
+    });
+    doc.write('</head><body>');
+    // Optional professional print header
+    doc.write('<div class="print-header">');
+    doc.write('<div><strong>BroMan Real Estate</strong></div>');
+    doc.write('<div>فاتورة معاملة</div>');
+    doc.write('<hr/></div>');
+    doc.write(invoice.outerHTML);
+    doc.write('</body></html>');
+    doc.close();
+
+    // Wait for styles to load then call print
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        // Optionally close the window after printing
+        // printWindow.close();
+    }, 500);
 }
 
 async function deleteSale(saleId) {
