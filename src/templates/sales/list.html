@@ -80,17 +80,18 @@
         <div class="table-responsive">
             <table class="table table-hover" id="salesTable">
                 <thead>
-                    <tr>
-                        <th>كود الوحدة</th>
-                        <th>العميل</th>
-                        <th>المشروع</th>
-                        <th>نوع العقار</th>
-                        <th>سعر الوحدة</th>
-                        <th>عمولة الشركة</th>
-                        <th>صافي الدخل</th>
-                        <th>تاريخ البيع</th>
-                        <th>الإجراءات</th>
-                    </tr>
+                            <tr>
+                                <th>الإجراءات</th>
+                                <th>كود الوحدة</th>
+                                <th>العميل</th>
+                                <th>السيلز</th>
+                                <th>نوع العقار</th>
+                                <th>الحالة</th>
+                                <th>تاريخ البيع</th>
+                                <th class="fw-medium">سعر الوحدة</th>
+                                <th class="fw-medium">عمولة الشركة</th>
+                                <th class="fw-medium">صافي الدخل</th>
+                            </tr>
                 </thead>
                 <tbody id="salesTableBody">
                     <!-- Sales will be loaded dynamically -->
@@ -124,6 +125,9 @@
 
 <!-- Sale Detail Modal (Redesigned Invoice-style) -->
 <style>
+    /* Ensure medium-weight for highlighted financial columns in the table */
+    .fw-medium { font-weight: 500 !important; }
+
     /* Scoped modal styles for invoice-style layout */
     /* Modal sizing and centering */
     #saleDetailModal .modal-dialog {
@@ -339,18 +343,24 @@ function renderSalesTable(sales) {
     
     document.getElementById('noDataMessage').style.display = 'none';
     
-    tbody.innerHTML = sales.map(sale => `
+    // helper for status badge
+    const statusBadge = (status) => {
+        if (!status) return '';
+        const s = String(status).toLowerCase();
+        if (s.includes('completed') || s.includes('مكتمل') || s.includes('done')) return '<span class="badge bg-success">مكتملة</span>';
+        if (s.includes('pending') || s.includes('معلقة') || s.includes('pending')) return '<span class="badge bg-warning text-dark">معلقة</span>';
+        if (s.includes('canceled') || s.includes('ملغاة') || s.includes('cancel')) return '<span class="badge bg-danger">ملغاة</span>';
+        // fallback: neutral badge
+        return `<span class="badge bg-secondary">${status}</span>`;
+    };
+
+    tbody.innerHTML = sales.map(sale => {
+        // company commission: prefer gross amount field used in modal
+        const companyCommission = (sale.company_commission_amount ?? sale.company_commission ?? 0);
+        const netIncome = (sale.net_company_income ?? sale.net_income ?? (sale.unit_price - (companyCommission || 0)) );
+
+        return `
         <tr>
-            <td><code>${sale.unit_code}</code></td>
-            <td>${sale.client_name}</td>
-            <td>${sale.project_name}</td>
-            <td><span class="badge bg-secondary">${sale.property_type}</span></td>
-            <td>${formatCurrency(sale.unit_price)}</td>
-            <td>${formatCurrency(sale.company_commission)}</td>
-            <td class="${sale.net_company_income >= 0 ? 'text-success' : 'text-danger'}">
-                ${formatCurrency(sale.net_company_income)}
-            </td>
-            <td>${formatDate(sale.sale_date)}</td>
             <td>
                 <div class="btn-group btn-group-sm" role="group">
                     <button class="btn btn-outline-primary" onclick="viewSale(${sale.id})" title="عرض">
@@ -368,8 +378,18 @@ function renderSalesTable(sales) {
                     ` : ''}
                 </div>
             </td>
+            <td><code>${sale.unit_code}</code></td>
+            <td>${sale.client_name}</td>
+            <td>${sale.salesperson_name || ''}</td>
+            <td><span class="badge bg-secondary">${sale.property_type}</span></td>
+            <td>${statusBadge(sale.status)}</td>
+            <td>${formatDate(sale.sale_date)}</td>
+            <td class="fw-medium">${formatCurrency(sale.unit_price)}</td>
+            <td class="fw-medium">${formatCurrency(companyCommission)}</td>
+            <td class="fw-medium ${netIncome >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(netIncome)}</td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function renderPagination(data) {
@@ -664,13 +684,13 @@ function exportToExcel() {
     const exportData = salesData.map(sale => ({
         'كود الوحدة': sale.unit_code,
         'العميل': sale.client_name,
-        'المشروع': sale.project_name,
+        'السيلز': sale.salesperson_name || '',
         'نوع العقار': sale.property_type,
+        'الحالة': sale.status || '',
         'سعر الوحدة': sale.unit_price,
-        'عمولة الشركة': sale.company_commission,
-        'صافي الدخل': sale.net_company_income,
+        'عمولة الشركة': (sale.company_commission_amount ?? sale.company_commission ?? 0),
+        'صافي الدخل': (sale.net_company_income ?? sale.net_income ?? ''),
         'تاريخ البيع': sale.sale_date,
-        'مندوب المبيعات': sale.salesperson_name || '',
         'ملاحظات': sale.notes || ''
     }));
     
