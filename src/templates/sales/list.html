@@ -544,7 +544,7 @@ function renderSaleDetail(sale) {
                 <div class="section-sep"></div>
 
                 <table class="breakdown">
-                    <tr><td class="label">ضريبة السيلز</td><td class="value">${fmt(salesTaxAmount)} ${salesTaxRate ? `<small class="text-muted">(${pct(salesTaxRate)})</small>` : ''}</td></tr>
+                    <tr><td class="label">اجمالي الضريبة 19% على السلز</td><td class="value">${fmt(salespersonTaxAmount)} ${salespersonTaxRate ? `<small class="text-muted">(${pct(salespersonTaxRate)})</small>` : ''}</td></tr>
                     <tr><td class="label">ضريبة مدير المبيعات</td><td class="value">${fmt(salesManagerTaxAmount)} ${salesManagerTaxRate ? `<small class="text-muted">(${pct(salesManagerTaxRate)})</small>` : ''}</td></tr>
                     <tr><td class="label">ضريبة القيمة المضافة</td><td class="value">${fmt(vatAmount)} ${vatRate ? `<small class="text-muted">(${pct(vatRate)})</small>` : ''}</td></tr>
                 </table>
