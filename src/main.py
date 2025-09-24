@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -51,6 +52,20 @@ app.register_blueprint(treasury_bp, url_prefix='/treasury')
 app.register_blueprint(admin_pages_bp)
 app.register_blueprint(reports_bp, url_prefix='/reports')
 
+# Custom Jinja2 filter for date formatting
+@app.template_filter('date')
+def format_date(value, format='%Y-%m-%d'):
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    elif isinstance(value, str):
+        try:
+            # Attempt to parse string to datetime first
+            dt_object = datetime.strptime(value, '%Y-%m-%d') # Assuming YYYY-MM-DD format for string dates
+            return dt_object.strftime(format)
+        except ValueError:
+            pass # Fallback to original value if parsing fails
+    return value # Return original value if not a datetime object or parsable string
+
 # User loader for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
@@ -85,3 +100,4 @@ def test():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
+

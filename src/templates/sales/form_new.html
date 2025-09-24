@@ -6,118 +6,102 @@
 
 {% block extra_css %}
 <style>
-    .calculation-section {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .calculation-card {
-        background: white;
+    .form-section-card {
+        background: #fff;
         border-radius: 8px;
-        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        padding: 25px;
+        border: 1px solid #e0e0e0;
+    }
+    .section-title {
+        font-size: 1.25rem;
+        color: #343a40;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+    .section-title i {
+        margin-left: 10px;
+        color: #007bff;
+    }
+    .input-group-text {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+    .percentage-input {
+        text-align: right;
+    }
+    .calculation-output-card {
+        background: linear-gradient(145deg, #e2e6ea, #f8f9fa);
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 25px;
+        border: 1px solid #d1d7dc;
+        position: sticky;
+        top: 20px;
+    }
+    .calculation-group-title {
+        font-size: 1.1rem;
+        color: #0056b3;
         margin-bottom: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #007bff;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #cce5ff;
     }
-    
-    .calculation-card.success {
-        border-left-color: #28a745;
-    }
-    
-    .calculation-card.warning {
-        border-left-color: #ffc107;
-    }
-    
-    .calculation-card.info {
-        border-left-color: #17a2b8;
-    }
-    
     .calculation-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
         padding: 8px 0;
-        border-bottom: 1px solid #f8f9fa;
+        border-bottom: 1px dotted #dee2e6;
     }
-    
     .calculation-row:last-child {
         border-bottom: none;
-        font-weight: bold;
-        background: #f8f9fa;
-        margin: 0 -15px;
-        padding: 12px 15px;
-        border-radius: 0 0 8px 8px;
     }
-    
     .calculation-label {
         font-weight: 500;
         color: #495057;
     }
-    
     .calculation-value {
         font-weight: 600;
-        color: #007bff;
-        font-family: 'Courier New', monospace;
+        color: #28a745;
+        text-align: left;
+        min-width: 120px; /* Ensure alignment */
     }
-    
-    .form-section {
-        background: white;
-        border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    .final-income-row {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #dc3545;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #007bff;
     }
-    
-    .section-title {
-        color: #495057;
-        font-weight: 600;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #e9ecef;
-    }
-    
-    .input-group-text {
-        background: #f8f9fa;
-        border-color: #ced4da;
-        font-weight: 500;
-    }
-    
     .form-control:focus {
-        border-color: #007bff;
+        border-color: #80bdff;
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
-    
-    .percentage-input {
-        max-width: 120px;
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
     }
-    
-    .main-container {
-        max-width: 1400px;
-        margin: 0 auto;
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
     }
-    
-    .sticky-calculations {
-        position: sticky;
-        top: 20px;
-        max-height: calc(100vh - 40px);
-        overflow-y: auto;
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
     }
-    
-    @media (max-width: 1200px) {
-        .sticky-calculations {
-            position: relative;
-            top: auto;
-            max-height: none;
-        }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #5a6268;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="main-container">
+<div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -134,20 +118,16 @@
     </div>
 
     <div class="row">
-        <!-- Input Form Section -->
+        <!-- Left Column: Input Form -->
         <div class="col-lg-7">
             <form id="saleForm" novalidate>
                 {% if sale %}
                 <input type="hidden" id="saleId" value="{{ sale.id }}">
                 {% endif %}
                 
-                <!-- Basic Information -->
-                <div class="form-section">
-                    <h5 class="section-title">
-                        <i class="bi bi-person-circle text-primary"></i>
-                        المعلومات الأساسية
-                    </h5>
-                    
+                <!-- Client Information -->
+                <div class="form-section-card">
+                    <h5 class="section-title"><i class="bi bi-person-circle"></i> معلومات العميل والوحدة</h5>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="client_name" class="form-label">اسم العميل <span class="text-danger">*</span></label>
@@ -156,18 +136,13 @@
                             <div class="invalid-feedback">يرجى إدخال اسم العميل</div>
                         </div>
                         <div class="col-md-6">
-                            <label for="salesperson_name" class="form-label">ســلز</label>
-                            <input type="text" class="form-control" id="salesperson_name" name="salesperson_name" 
-                                   value="{% if sale %}{{ sale.salesperson_name }}{% endif %}">
+                            <label for="unit_code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="unit_code" name="unit_code" 
+                                   value="{% if sale %}{{ sale.unit_code }}{% endif %}" required>
+                            <div class="invalid-feedback">يرجى إدخال كود الوحدة</div>
                         </div>
                     </div>
-                    
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="sales_manager_name" class="form-label">مدير المبيعات</label>
-                            <input type="text" class="form-control" id="sales_manager_name" name="sales_manager_name" 
-                                   value="{% if sale %}{{ sale.sales_manager_name }}{% endif %}">
-                        </div>
                         <div class="col-md-6">
                             <label for="property_type" class="form-label">نوع العقار المباع <span class="text-danger">*</span></label>
                             <select class="form-select" id="property_type" name="property_type" required>
@@ -179,29 +154,19 @@
                             </select>
                             <div class="invalid-feedback">يرجى اختيار نوع العقار</div>
                         </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="unit_code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="unit_code" name="unit_code" 
-                                   value="{% if sale %}{{ sale.unit_code }}{% endif %}" required>
-                            <div class="invalid-feedback">يرجى إدخال كود الوحدة</div>
-                        </div>
                         <div class="col-md-6">
                             <label for="sale_date" class="form-label">تاريخ البيع <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="sale_date" name="sale_date" 
-                                   value="{% if sale %}{{ sale.sale_date }}{% endif %}" required>
+                                   value="{% if sale %}{{ sale.sale_date.isoformat() }}{% else %}{{ "now"|date("%Y-%m-%d") }}{% endif %}" required>
                             <div class="invalid-feedback">يرجى إدخال تاريخ البيع</div>
                         </div>
                     </div>
-                    
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="unit_price" class="form-label">سعر الوحدة <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" class="form-control" id="unit_price" name="unit_price" 
-                                       value="{% if sale %}{{ sale.unit_price }}{% endif %}" 
+                                <input type="number" class="form-control text-left" id="unit_price" name="unit_price" 
+                                       value="{% if sale %}{{ sale.unit_price|float }}{% endif %}" 
                                        step="0.01" min="0" required>
                                 <span class="input-group-text">جنيه</span>
                             </div>
@@ -210,19 +175,33 @@
                     </div>
                 </div>
 
+                <!-- Salesperson Information -->
+                <div class="form-section-card">
+                    <h5 class="section-title"><i class="bi bi-people"></i> معلومات السيلز ومدير المبيعات</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="salesperson_name" class="form-label">ســلز</label>
+                            <input type="text" class="form-control" id="salesperson_name" name="salesperson_name" 
+                                   value="{% if sale %}{{ sale.salesperson_name }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sales_manager_name" class="form-label">مدير المبيعات</label>
+                            <input type="text" class="form-control" id="sales_manager_name" name="sales_manager_name" 
+                                   value="{% if sale %}{{ sale.sales_manager_name }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Commission Rates -->
-                <div class="form-section">
-                    <h5 class="section-title">
-                        <i class="bi bi-percent text-success"></i>
-                        نسب العمولات
-                    </h5>
-                    
+                <div class="form-section-card">
+                    <h5 class="section-title"><i class="bi bi-percent"></i> نسب العمولات</h5>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="company_commission_rate" class="form-label">نسبة عمولة الشركة <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="company_commission_rate" 
-                                       name="company_commission_rate" step="0.01" min="0" max="100" required>
+                                       name="company_commission_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.company_commission_rate|float * 100 }}{% else %}0{% endif %}" required>
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -230,26 +209,28 @@
                             <label for="salesperson_commission_rate" class="form-label">نسبة عمولة السلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_commission_rate" 
-                                       name="salesperson_commission_rate" step="0.01" min="0" max="100" value="0">
+                                       name="salesperson_commission_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.salesperson_commission_rate|float * 100 }}{% else %}0{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="salesperson_incentive_rate" class="form-label">نسبة الحافز للسلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_incentive_rate" 
-                                       name="salesperson_incentive_rate" step="0.01" min="0" max="100" value="0">
+                                       name="salesperson_incentive_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.salesperson_incentive_rate|float * 100 }}{% else %}0{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label for="sales_manager_commission_rate" class="form-label">نسبة عمولة مدير المبيعات</label>
+                            <label for="sales_manager_commission_rate_input" class="form-label">نسبة عمولة مدير المبيعات</label>
                             <div class="input-group">
-                                <input type="number" class="form-control percentage-input" id="sales_manager_commission_rate" 
-                                       name="sales_manager_commission_rate" step="0.01" min="0" max="100" value="0">
+                                <input type="number" class="form-control percentage-input" id="sales_manager_commission_rate_input" 
+                                       name="sales_manager_commission_rate_input" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.sales_manager_commission_rate|float * 100 }}{% else %}0{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -257,18 +238,15 @@
                 </div>
 
                 <!-- Tax Rates -->
-                <div class="form-section">
-                    <h5 class="section-title">
-                        <i class="bi bi-calculator text-warning"></i>
-                        نسب الضرائب
-                    </h5>
-                    
+                <div class="form-section-card">
+                    <h5 class="section-title"><i class="bi bi-calculator"></i> نسب الضرائب</h5>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="vat_rate" class="form-label">نسبة ضريبة القيمة المضافة</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="vat_rate" 
-                                       name="vat_rate" step="0.01" min="0" max="100" value="14">
+                                       name="vat_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.vat_rate|float * 100 }}{% else %}14{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -276,18 +254,19 @@
                             <label for="sales_tax_rate" class="form-label">نسبة ضريبة المبيعات</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="sales_tax_rate" 
-                                       name="sales_tax_rate" step="0.01" min="0" max="100" value="5">
+                                       name="sales_tax_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.sales_tax_rate|float * 100 }}{% else %}5{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="annual_tax_rate" class="form-label">نسبة الضريبة السنوية</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="annual_tax_rate" 
-                                       name="annual_tax_rate" step="0.01" min="0" max="100" value="22.5">
+                                       name="annual_tax_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.annual_tax_rate|float * 100 }}{% else %}22.5{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -295,18 +274,19 @@
                             <label for="salesperson_tax_rate" class="form-label">نسبة ضريبة السلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_tax_rate" 
-                                       name="salesperson_tax_rate" step="0.01" min="0" max="100" value="19">
+                                       name="salesperson_tax_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.salesperson_tax_rate|float * 100 }}{% else %}0{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
                     </div>
-                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="sales_manager_tax_rate" class="form-label">نسبة ضريبة مدير المبيعات</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="sales_manager_tax_rate" 
-                                       name="sales_manager_tax_rate" step="0.01" min="0" max="100" value="19">
+                                       name="sales_manager_tax_rate" step="0.01" min="0" max="100" 
+                                       value="{% if sale %}{{ sale.sales_manager_tax_rate|float * 100 }}{% else %}0{% endif %}">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -314,7 +294,7 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="form-section">
+                <div class="form-section-card">
                     <div class="d-flex justify-content-between">
                         <a href="/sales" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i>
@@ -329,112 +309,98 @@
             </form>
         </div>
 
-        <!-- Calculations Display Section -->
+        <!-- Right Column: Calculations Display -->
         <div class="col-lg-5">
-            <div class="sticky-calculations">
-                <div class="calculation-section">
-                    <h5 class="text-center mb-4">
-                        <i class="bi bi-graph-up text-success"></i>
-                        الحسابات المالية
-                    </h5>
-
-                    <!-- Company Commission Section -->
-                    <div class="calculation-card">
-                        <h6 class="text-primary mb-3">العمولة المستحقة للشركة من شركة المبيعات</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي عمولة الشركة بدون ضرائب</span>
-                            <span class="calculation-value" id="calc_company_commission">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي الحافز المسلم للسلز</span>
-                            <span class="calculation-value" id="calc_salesperson_incentive">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي المبلغ المسلم للشركة بعد 5%</span>
-                            <span class="calculation-value" id="calc_company_after_5_percent">0.00 جنيه</span>
-                        </div>
+            <div class="calculation-output-card">
+                <h5 class="section-title"><i class="bi bi-calculator-fill"></i> نتائج الحسابات</h5>
+                
+                <div class="mb-4">
+                    <h6 class="calculation-group-title">العمولة المستحقة للشركة من شركة المبيعات</h6>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي عمولة الشركة بدون ضرائب</span>
+                        <span class="calculation-value" id="output_total_company_commission_before_tax">0.00 جنيه</span>
                     </div>
-
-                    <!-- Sales Taxes and VAT Section -->
-                    <div class="calculation-card info">
-                        <h6 class="text-info mb-3">ضرائب المبيعات والقيمة المضافة</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي مبلغ العمولة بعد 14%</span>
-                            <span class="calculation-value" id="calc_commission_after_vat">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي القيمة المضافة 14%</span>
-                            <span class="calculation-value" id="calc_vat_amount">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي ضريبة المبيعات 5%</span>
-                            <span class="calculation-value" id="calc_sales_tax_amount">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي ضريبة 19%</span>
-                            <span class="calculation-value" id="calc_19_percent_tax">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي صافي مبلغ الشركة</span>
-                            <span class="calculation-value" id="calc_net_company_amount">0.00 جنيه</span>
-                        </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي الحافز المسلم للسلز</span>
+                        <span class="calculation-value" id="output_total_salesperson_incentive_paid">0.00 جنيه</span>
                     </div>
-
-                    <!-- Salesperson Commission Section -->
-                    <div class="calculation-card warning">
-                        <h6 class="text-warning mb-3">عمولة السيلز</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي المبلغ المستحق للسلز</span>
-                            <span class="calculation-value" id="calc_salesperson_due">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي الضريبة 19% على السلز</span>
-                            <span class="calculation-value" id="calc_salesperson_tax">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي المبلغ المسلم للسيلز</span>
-                            <span class="calculation-value" id="calc_salesperson_net">0.00 جنيه</span>
-                        </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي المبلغ المسلم للشركة بعد 5%</span>
+                        <span class="calculation-value" id="output_total_company_income_after_5_percent">0.00 جنيه</span>
                     </div>
+                </div>
 
-                    <!-- Sales Manager Commission Section -->
-                    <div class="calculation-card warning">
-                        <h6 class="text-warning mb-3">عمولة مدير المبيعات</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي المبلغ المستحق لمدير المبيعات</span>
-                            <span class="calculation-value" id="calc_manager_due">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي الضريبة 19% على مدير المبيعات</span>
-                            <span class="calculation-value" id="calc_manager_tax">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي المبلغ المسلم لمدير المبيعات</span>
-                            <span class="calculation-value" id="calc_manager_net">0.00 جنيه</span>
-                        </div>
+                <div class="mb-4">
+                    <h6 class="calculation-group-title">ضرائب المبيعات والقيمة المضافة</h6>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي مبلغ العمولة بعد 14%</span>
+                        <span class="calculation-value" id="output_company_commission_amount">0.00 جنيه</span>
                     </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي القيمة المضافة 14%</span>
+                        <span class="calculation-value" id="output_vat_amount">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي ضريبة المبيعات 5%</span>
+                        <span class="calculation-value" id="output_sales_tax_amount">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي ضريبة 19%</span>
+                        <span class="calculation-value" id="output_total_vat_and_sales_tax_amount">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي صافي مبلغ الشركة (بعد ضريبة المبيعات فقط)</span>
+                        <span class="calculation-value" id="output_net_company_income_after_sales_tax">0.00 جنيه</span>
+                    </div>
+                </div>
 
-                    <!-- Annual Tax Section -->
-                    <div class="calculation-card">
-                        <h6 class="text-primary mb-3">الضريبة السنوية</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي صافي مبلغ الشركة</span>
-                            <span class="calculation-value" id="calc_company_net_before_annual">0.00 جنيه</span>
-                        </div>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي الضريبة السنوية 22.5%</span>
-                            <span class="calculation-value" id="calc_annual_tax">0.00 جنيه</span>
-                        </div>
+                <div class="mb-4">
+                    <h6 class="calculation-group-title">عمولة السيلز</h6>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي المبلغ المستحق للسلز (قبل الضريبة)</span>
+                        <span class="calculation-value" id="output_total_salesperson_income_before_tax">0.00 جنيه</span>
                     </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي الضريبة على السلز</span>
+                        <span class="calculation-value" id="output_salesperson_tax_amount">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي المبلغ المسلم للسيلز (بعد الضريبة)</span>
+                        <span class="calculation-value" id="output_net_salesperson_income">0.00 جنيه</span>
+                    </div>
+                </div>
 
-                    <!-- Final Net Income Section -->
-                    <div class="calculation-card success">
-                        <h6 class="text-success mb-3">صافي دخل الشركة بعد كل الضرائب وعمولة السيلز</h6>
-                        <div class="calculation-row">
-                            <span class="calculation-label">اجمالي صافي مبلغ الشركة المتاح</span>
-                            <span class="calculation-value" id="calc_final_company_income">0.00 جنيه</span>
-                        </div>
+                <div class="mb-4">
+                    <h6 class="calculation-group-title">عمولة مدير المبيعات</h6>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي المبلغ المستحق لمدير المبيعات</span>
+                        <span class="calculation-value" id="output_total_sales_manager_income_before_tax">0.00 جنيه</span>
                     </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي الضريبة على مدير المبيعات</span>
+                        <span class="calculation-value" id="output_sales_manager_tax_amount">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي المبلغ المسلم لمدير المبيعات</span>
+                        <span class="calculation-value" id="output_net_sales_manager_income">0.00 جنيه</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="calculation-group-title">الضريبة السنوية</h6>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي صافي مبلغ الشركة (بعد الضرائب وعمولة الوسيط)</span>
+                        <span class="calculation-value" id="output_net_company_income_after_all_taxes_and_commissions">0.00 جنيه</span>
+                    </div>
+                    <div class="calculation-row">
+                        <span class="calculation-label">اجمالي الضريبة السنوية 22,5%</span>
+                        <span class="calculation-value" id="output_annual_tax_amount">0.00 جنيه</span>
+                    </div>
+                </div>
+
+                <div class="final-income-row calculation-row">
+                    <span class="calculation-label">صافي دخل الشركة بعد كل الضرائب وعمولة السيلز</span>
+                    <span class="calculation-value" id="output_final_company_income">0.00 جنيه</span>
                 </div>
             </div>
         </div>
@@ -444,277 +410,151 @@
 
 {% block extra_js %}
 <script>
-let currentSale = {% if sale %}{{ sale.to_dict() | tojson }}{% else %}null{% endif %};
+    document.addEventListener("DOMContentLoaded", function() {
+        const saleForm = document.getElementById("saleForm");
+        const saleId = document.getElementById("saleId") ? document.getElementById("saleId").value : null;
 
-// Default commission rates based on property type (from Excel analysis)
-const defaultRates = {
-    'شقة': {
-        company_commission_rate: 5.00,
-        salesperson_commission_rate: 0.30,
-        salesperson_incentive_rate: 2.00,
-        sales_manager_commission_rate: 0.30
-    },
-    'تجاري': {
-        company_commission_rate: 0.00,
-        salesperson_commission_rate: 0.50,
-        salesperson_incentive_rate: 0.00,
-        sales_manager_commission_rate: 0.00
-    },
-    'اداري': {
-        company_commission_rate: 0.00,
-        salesperson_commission_rate: 0.50,
-        salesperson_incentive_rate: 0.00,
-        sales_manager_commission_rate: 0.00
-    },
-    'طبي': {
-        company_commission_rate: 0.00,
-        salesperson_commission_rate: 0.50,
-        salesperson_incentive_rate: 0.00,
-        sales_manager_commission_rate: 0.00
-    }
-};
+        const inputFields = saleForm.querySelectorAll("input[type=\"number\"], input[type=\"text\"], input[type=\"date\"], select");
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Setup form validation
-    const form = document.getElementById('saleForm');
-    form.addEventListener('submit', handleFormSubmit);
-    
-    // Setup auto-calculation on input changes
-    const inputs = form.querySelectorAll('input, select');
-    inputs.forEach(input => {
-        input.addEventListener('input', debounce(calculateAll, 300));
-        input.addEventListener('change', calculateAll);
-    });
-    
-    // Setup property type change handler
-    document.getElementById('property_type').addEventListener('change', handlePropertyTypeChange);
-    
-    // Set default date to today if creating new sale
-    if (!currentSale) {
-        document.getElementById('sale_date').value = new Date().toISOString().split('T')[0];
-    }
-    
-    // Load existing data if editing
-    if (currentSale) {
-        loadExistingData();
-    }
-    
-    // Initial calculation
-    calculateAll();
-});
-
-function handlePropertyTypeChange() {
-    const propertyType = document.getElementById('property_type').value;
-    if (propertyType && defaultRates[propertyType]) {
-        const rates = defaultRates[propertyType];
-        document.getElementById('company_commission_rate').value = rates.company_commission_rate;
-        document.getElementById('salesperson_commission_rate').value = rates.salesperson_commission_rate;
-        document.getElementById('salesperson_incentive_rate').value = rates.salesperson_incentive_rate;
-        document.getElementById('sales_manager_commission_rate').value = rates.sales_manager_commission_rate;
-    }
-    calculateAll();
-}
-
-function loadExistingData() {
-    // Load existing sale data into form
-    Object.keys(currentSale).forEach(key => {
-        const element = document.getElementById(key);
-        if (element && currentSale[key] !== null) {
-            element.value = currentSale[key];
-        }
-    });
-}
-
-function calculateAll() {
-    const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
-    
-    if (unitPrice <= 0) {
-        clearCalculations();
-        return;
-    }
-    
-    // Get all rates
-    const companyCommissionRate = parseFloat(document.getElementById('company_commission_rate').value) || 0;
-    const salespersonCommissionRate = parseFloat(document.getElementById('salesperson_commission_rate').value) || 0;
-    const salespersonIncentiveRate = parseFloat(document.getElementById('salesperson_incentive_rate').value) || 0;
-    const salesManagerCommissionRate = parseFloat(document.getElementById('sales_manager_commission_rate').value) || 0;
-    const vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
-    const salesTaxRate = parseFloat(document.getElementById('sales_tax_rate').value) || 0;
-    const annualTaxRate = parseFloat(document.getElementById('annual_tax_rate').value) || 0;
-    const salespersonTaxRate = parseFloat(document.getElementById('salesperson_tax_rate').value) || 0;
-    const salesManagerTaxRate = parseFloat(document.getElementById('sales_manager_tax_rate').value) || 0;
-    
-    // Convert percentages to decimals
-    const companyCommissionDecimal = companyCommissionRate / 100;
-    const salespersonCommissionDecimal = salespersonCommissionRate / 100;
-    const salespersonIncentiveDecimal = salespersonIncentiveRate / 100;
-    const salesManagerCommissionDecimal = salesManagerCommissionRate / 100;
-    const vatDecimal = vatRate / 100;
-    const salesTaxDecimal = salesTaxRate / 100;
-    const annualTaxDecimal = annualTaxRate / 100;
-    const salespersonTaxDecimal = salespersonTaxRate / 100;
-    const salesManagerTaxDecimal = salesManagerTaxRate / 100;
-    
-    // 1. Company Commission Section
-    const companyCommission = unitPrice * companyCommissionDecimal;
-    const salespersonIncentive = unitPrice * salespersonIncentiveDecimal;
-    const companyAfter5Percent = companyCommission * (1 - 0.05); // 5% deduction as per prompt
-    
-    // 2. Sales Taxes and VAT Section
-    const commissionAfterVat = companyCommission / (1 + vatDecimal);
-    const vatAmount = commissionAfterVat * vatDecimal;
-    const salesTaxAmount = commissionAfterVat * salesTaxDecimal;
-    const tax19Percent = 75000; // Fixed value as seen in Excel (needs clarification)
-    const netCompanyAmount = commissionAfterVat - salesTaxAmount;
-    
-    // 3. Salesperson Commission Section
-    const salespersonDue = unitPrice * salespersonCommissionDecimal;
-    const salespersonTax = salespersonDue * salespersonTaxDecimal;
-    const salespersonNet = salespersonDue - salespersonTax;
-    
-    // 4. Sales Manager Commission Section
-    const managerDue = unitPrice * salesManagerCommissionDecimal;
-    const managerTax = managerDue * salesManagerTaxDecimal;
-    const managerNet = managerDue - managerTax;
-    
-    // 5. Annual Tax Section
-    const companyNetBeforeAnnual = netCompanyAmount - salespersonNet - managerNet;
-    const annualTax = netCompanyAmount * annualTaxDecimal; // Based on Excel logic
-    
-    // 6. Final Net Income
-    const finalCompanyIncome = companyNetBeforeAnnual - annualTax + salespersonIncentive;
-    
-    // Update display
-    updateCalculationDisplay({
-        companyCommission,
-        salespersonIncentive,
-        companyAfter5Percent,
-        commissionAfterVat,
-        vatAmount,
-        salesTaxAmount,
-        tax19Percent,
-        netCompanyAmount,
-        salespersonDue,
-        salespersonTax,
-        salespersonNet,
-        managerDue,
-        managerTax,
-        managerNet,
-        companyNetBeforeAnnual,
-        annualTax,
-        finalCompanyIncome
-    });
-}
-
-function updateCalculationDisplay(calculations) {
-    document.getElementById('calc_company_commission').textContent = formatCurrency(calculations.companyCommission);
-    document.getElementById('calc_salesperson_incentive').textContent = formatCurrency(calculations.salespersonIncentive);
-    document.getElementById('calc_company_after_5_percent').textContent = formatCurrency(calculations.companyAfter5Percent);
-    
-    document.getElementById('calc_commission_after_vat').textContent = formatCurrency(calculations.commissionAfterVat);
-    document.getElementById('calc_vat_amount').textContent = formatCurrency(calculations.vatAmount);
-    document.getElementById('calc_sales_tax_amount').textContent = formatCurrency(calculations.salesTaxAmount);
-    document.getElementById('calc_19_percent_tax').textContent = formatCurrency(calculations.tax19Percent);
-    document.getElementById('calc_net_company_amount').textContent = formatCurrency(calculations.netCompanyAmount);
-    
-    document.getElementById('calc_salesperson_due').textContent = formatCurrency(calculations.salespersonDue);
-    document.getElementById('calc_salesperson_tax').textContent = formatCurrency(calculations.salespersonTax);
-    document.getElementById('calc_salesperson_net').textContent = formatCurrency(calculations.salespersonNet);
-    
-    document.getElementById('calc_manager_due').textContent = formatCurrency(calculations.managerDue);
-    document.getElementById('calc_manager_tax').textContent = formatCurrency(calculations.managerTax);
-    document.getElementById('calc_manager_net').textContent = formatCurrency(calculations.managerNet);
-    
-    document.getElementById('calc_company_net_before_annual').textContent = formatCurrency(calculations.companyNetBeforeAnnual);
-    document.getElementById('calc_annual_tax').textContent = formatCurrency(calculations.annualTax);
-    
-    document.getElementById('calc_final_company_income').textContent = formatCurrency(calculations.finalCompanyIncome);
-}
-
-function clearCalculations() {
-    const calculationElements = document.querySelectorAll('.calculation-value');
-    calculationElements.forEach(element => {
-        element.textContent = '0.00 جنيه';
-    });
-}
-
-function formatCurrency(amount) {
-    // Fix decimal point display issue mentioned in prompt
-    return new Intl.NumberFormat('ar-EG', {
-        style: 'currency',
-        currency: 'EGP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(amount).replace('ج.م.', '') + ' جنيه';
-}
-
-async function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        return;
-    }
-    
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalText = submitButton.innerHTML;
-    
-    try {
-        showLoading(submitButton, 'جاري الحفظ...');
-        
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData);
-        
-        const url = currentSale ? `/sales/api/sales/${currentSale.id}` : '/sales/api/sales';
-        const method = currentSale ? 'PUT' : 'POST';
-        
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
+        const currencyFormatter = new Intl.NumberFormat("ar-EG", {
+            style: "currency",
+            currency: "EGP",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
-        
-        const result = await response.json();
-        
-        if (result.error) {
-            showError(result.error);
-            return;
+
+        function formatCurrency(value) {
+            return currencyFormatter.format(value);
         }
-        
-        showAlert(result.message, 'success');
-        
-        // Redirect to sales list after a short delay
-        setTimeout(() => {
-            window.location.href = '/sales';
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Error saving sale:', error);
-        showError('حدث خطأ في حفظ المعاملة');
-    } finally {
-        hideLoading(submitButton);
-        submitButton.innerHTML = originalText;
-    }
-}
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+        function getFormData() {
+            const formData = {};
+            inputFields.forEach(field => {
+                let value = field.value;
+                if (field.type === "number") {
+                    value = parseFloat(value);
+                    if (field.classList.contains("percentage-input")) {
+                        value = value / 100; // Convert percentage to decimal
+                    }
+                }
+                formData[field.name] = value;
+            });
+            // Special handling for sales_manager_commission_rate_input to sales_manager_commission_rate
+            if (formData.sales_manager_commission_rate_input !== undefined) {
+                formData.sales_manager_commission_rate = formData.sales_manager_commission_rate_input;
+                delete formData.sales_manager_commission_rate_input;
+            }
+            return formData;
+        }
 
-function showError(message) {
-    showAlert(message, 'danger');
-}
+        async function calculatePreview() {
+            const formData = getFormData();
+            console.log("Form Data for Preview:", formData);
+
+            try {
+                console.log("Sending request to /api/sales/preview with method POST and body:", JSON.stringify(formData));
+                const response = await fetch("/api/sales/preview", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "خطأ في حساب المعاينة");
+                }
+
+                const result = await response.json();
+                console.log("Calculation Result:", result);
+                updateOutputDisplay(result);
+            } catch (error) {
+                console.error("Error during preview calculation:", error);
+                // Optionally display an error message to the user
+            }
+        }
+
+        function updateOutputDisplay(results) {
+            document.getElementById("output_total_company_commission_before_tax").textContent = formatCurrency(results.total_company_commission_before_tax || 0);
+            document.getElementById("output_total_salesperson_incentive_paid").textContent = formatCurrency(results.total_salesperson_incentive_paid || 0);
+            document.getElementById("output_total_company_income_after_5_percent").textContent = formatCurrency(results.total_company_income_after_5_percent || 0);
+
+            document.getElementById("output_company_commission_amount").textContent = formatCurrency(results.company_commission_amount || 0);
+            document.getElementById("output_vat_amount").textContent = formatCurrency(results.vat_amount || 0);
+            document.getElementById("output_sales_tax_amount").textContent = formatCurrency(results.sales_tax_amount || 0);
+            document.getElementById("output_total_vat_and_sales_tax_amount").textContent = formatCurrency(results.total_vat_and_sales_tax_amount || 0);
+            document.getElementById("output_net_company_income_after_sales_tax").textContent = formatCurrency(results.net_company_income_after_sales_tax || 0);
+
+            document.getElementById("output_total_salesperson_income_before_tax").textContent = formatCurrency(results.total_salesperson_income_before_tax || 0);
+            document.getElementById("output_salesperson_tax_amount").textContent = formatCurrency(results.salesperson_tax_amount || 0);
+            document.getElementById("output_net_salesperson_income").textContent = formatCurrency(results.net_salesperson_income || 0);
+
+            document.getElementById("output_total_sales_manager_income_before_tax").textContent = formatCurrency(results.total_sales_manager_income_before_tax || 0);
+            document.getElementById("output_sales_manager_tax_amount").textContent = formatCurrency(results.sales_manager_tax_amount || 0);
+            document.getElementById("output_net_sales_manager_income").textContent = formatCurrency(results.net_sales_manager_income || 0);
+
+            document.getElementById("output_annual_tax_amount").textContent = formatCurrency(results.annual_tax_amount || 0);
+            document.getElementById("output_net_company_income_after_all_taxes_and_commissions").textContent = formatCurrency(results.net_company_income_after_all_taxes_and_commissions || 0);
+
+            document.getElementById("output_final_company_income").textContent = formatCurrency(results.final_company_income || 0);
+        }
+
+        // Attach event listeners for real-time calculation
+        inputFields.forEach(field => {
+            field.addEventListener("input", calculatePreview);
+            if (field.type === "select-one") { // For select elements
+                field.addEventListener("change", calculatePreview);
+            }
+        });
+
+        // Initial calculation on page load if editing an existing sale
+        if (saleId) {
+            // Populate form fields with existing sale data (already done by Jinja)
+            // Then trigger a preview calculation
+            calculatePreview();
+        }
+
+        saleForm.addEventListener("submit", async function(event) {
+            event.preventDefault();
+            saleForm.classList.add("was-validated");
+
+            if (!saleForm.checkValidity()) {
+                return;
+            }
+
+            const formData = getFormData();
+            const url = saleId ? `/api/sales/${saleId}` : "/api/sales";
+            const method = saleId ? "PUT" : "POST";
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.href = "/sales"; // Redirect to sales list
+                } else {
+                    alert(result.error || "حدث خطأ أثناء حفظ المعاملة");
+                }
+            } catch (error) {
+                console.error("Error saving sale:", error);
+                alert("حدث خطأ غير متوقع أثناء حفظ المعاملة");
+            }
+        });
+
+        // Initial calculation for new sale form to show default values
+        if (!saleId) {
+            calculatePreview();
+        }
+    });
 </script>
 {% endblock %}
 
