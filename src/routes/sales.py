@@ -46,7 +46,10 @@ def new_sale():
 def sale_detail(sale_id):
     """Sale detail page"""
     sale = Sale.query.get_or_404(sale_id)
-    return render_template('sales/detail.html', sale=sale)
+    creator = None
+    if sale.created_by:
+        creator = User.query.get(sale.created_by)
+    return render_template('sales/detail.html', sale=sale, creator=creator)
 
 @sales_bp.route('/<int:sale_id>/edit')
 @login_required

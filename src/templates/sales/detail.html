@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.sale-details-modal-style {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 1.5rem 2.5rem;
+    margin: 2rem auto;
+    max-width: 1100px;
+    font-size: 1rem;
+}
+.sale-details-modal-style .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+.sale-details-modal-style .col-label {
+    flex: 0 0 180px;
+    font-weight: bold;
+    color: #1a237e;
+    padding-left: 10px;
+}
+.sale-details-modal-style .col-value {
+    flex: 1;
+    color: #222;
+    text-align: left;
+    direction: ltr;
+}
+.sale-details-modal-style .egp {
+    color: #0057b8;
+    font-weight: bold;
+}
+.sale-details-modal-style .percent {
+    color: #388e3c;
+    font-weight: bold;
+}
+.sale-details-modal-style .section-title {
+    color: #0d47a1;
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.2rem;
+}
+</style>
+{% if sale %}
+<div class="sale-details-modal-style">
+    <div class="section-title">بيانات العميل والوحدة</div>
+    <div class="row"><div class="col-label">العميل:</div><div class="col-value">{{ sale.client_name }}</div></div>
+    <div class="row"><div class="col-label">كود الوحدة:</div><div class="col-value">{{ sale.unit_code }}</div></div>
+    <div class="row"><div class="col-label">نوع العقار:</div><div class="col-value">{{ sale.property_type }}</div></div>
+    <div class="row"><div class="col-label">اسم المشروع:</div><div class="col-value">{{ sale.project_name or '-' }}</div></div>
+
+    <div class="section-title">معلومات البيع</div>
+    <div class="row"><div class="col-label">تاريخ البيع:</div><div class="col-value">{{ sale.sale_date }}</div></div>
+    <div class="row"><div class="col-label">السلز:</div><div class="col-value">{{ sale.salesperson_name or '-' }}</div></div>
+    <div class="row"><div class="col-label">مدير المبيعات:</div><div class="col-value">{{ sale.sales_manager_name or '-' }}</div></div>
+    <div class="row"><div class="col-label">ملاحظات:</div><div class="col-value">{{ sale.notes or '-' }}</div></div>
+
+    <div class="section-title">الملخص المالي</div>
+    <div class="row"><div class="col-label">سعر الوحدة:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.unit_price) }}</div></div>
+    <div class="row"><div class="col-label">عمولة الشركة:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.company_commission_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.company_commission_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">عمولة السلز:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.salesperson_commission_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.salesperson_commission_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">حافز السلز:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.salesperson_incentive_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.salesperson_incentive_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">عمولة مدير المبيعات:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.sales_manager_commission_amount) }}
+    {% if sale.__dict__.get('sales_manager_commission_rate') is not none %}
+        <span class="percent">({{ '{:.2%}'.format(sale.sales_manager_commission_rate|float) }})</span>
+    {% endif %}
+    </div></div>
+    <div class="row"><div class="col-label">إجمالي عمولة الشركة قبل الضريبة:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.total_company_commission_before_tax if sale.total_company_commission_before_tax != 0 else sale.company_commission_amount) }}</div></div>
+    <div class="row"><div class="col-label">إجمالي الحوافز المدفوعة للسلز:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.total_salesperson_incentive_paid if sale.total_salesperson_incentive_paid != 0 else sale.salesperson_incentive_amount) }}</div></div>
+    <div class="row"><div class="col-label">ضريبة القيمة المضافة:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.vat_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.vat_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">ضريبة المبيعات:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.sales_tax_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.sales_tax_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">الضريبة السنوية:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.annual_tax_amount) }} <span class="percent">({{ '{:.2%}'.format(sale.annual_tax_rate) }})</span></div></div>
+    <div class="row"><div class="col-label">ضريبة السلز:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.salesperson_tax_amount) }}</div></div>
+    <div class="row"><div class="col-label">ضريبة مدير المبيعات:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.sales_manager_tax_amount) }}</div></div>
+    <div class="row"><div class="col-label">صافي دخل الشركة:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.net_company_income) }}</div></div>
+    <div class="row"><div class="col-label">صافي دخل السلز:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.net_salesperson_income) }}</div></div>
+    <div class="row"><div class="col-label">صافي دخل مدير المبيعات:</div><div class="col-value egp">EGP {{ '{:,.2f}'.format(sale.net_sales_manager_income) }}</div></div>
+
+    <div class="section-title">معلومات إضافية</div>
+    <div class="row"><div class="col-label">أنشئت بواسطة:</div><div class="col-value">{% if creator %}{{ creator.username }}{% else %}غير متوفر{% endif %}</div></div>
+    <div class="row"><div class="col-label">تاريخ الإنشاء:</div><div class="col-value">{{ sale.created_at }}</div></div>
+    <div class="row"><div class="col-label">آخر تحديث:</div><div class="col-value">{{ sale.updated_at }}</div></div>
+    <div class="row"><div class="col-label">رقم المعاملة المالية المرتبطة:</div><div class="col-value">{{ sale.transaction_id or '-' }}</div></div>
+    <div class="row"><div class="col-label">رقم المعاملة:</div><div class="col-value">{{ sale.id }}</div></div>
+    {% if sale.notes %}<div class="row"><div class="col-label">ملاحظات إضافية:</div><div class="col-value">{{ sale.notes }}</div></div>{% endif %}
+</div>
+{% else %}
+<p>لا توجد تفاصيل متاحة حالياً.</p>
+{% endif %}
+{% endblock %}
