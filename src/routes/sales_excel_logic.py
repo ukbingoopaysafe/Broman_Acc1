@@ -10,7 +10,9 @@ from src.models.sale import Sale, PropertyTypeRates
 from src.models.treasury import Treasury
 from src.models.transaction import Transaction
 from datetime import datetime
+
 from decimal import Decimal, ROUND_HALF_UP
+from src.utils.number_utils import convert_arabic_to_english_digits
 
 def _to_decimal(value, default=0):
     """Convert value to Decimal with proper handling"""
@@ -173,17 +175,30 @@ def create_sale_with_excel_logic():
         if existing_sale:
             return jsonify({'error': 'كود الوحدة موجود بالفعل'}), 400
         
+
+        # تحويل جميع الحقول الرقمية إلى أرقام إنجليزية
+        data['unit_price'] = convert_arabic_to_english_digits(data['unit_price'])
+        data['company_commission_rate'] = convert_arabic_to_english_digits(data.get('company_commission_rate', 0))
+        data['salesperson_commission_rate'] = convert_arabic_to_english_digits(data.get('salesperson_commission_rate', 0))
+        data['salesperson_incentive_rate'] = convert_arabic_to_english_digits(data.get('salesperson_incentive_rate', 0))
+        data['sales_manager_commission_rate'] = convert_arabic_to_english_digits(data.get('sales_manager_commission_rate', 0))
+        data['vat_rate'] = convert_arabic_to_english_digits(data.get('vat_rate', 14))
+        data['sales_tax_rate'] = convert_arabic_to_english_digits(data.get('sales_tax_rate', 5))
+        data['annual_tax_rate'] = convert_arabic_to_english_digits(data.get('annual_tax_rate', 22.5))
+        data['salesperson_tax_rate'] = convert_arabic_to_english_digits(data.get('salesperson_tax_rate', 19))
+        data['sales_manager_tax_rate'] = convert_arabic_to_english_digits(data.get('sales_manager_tax_rate', 19))
+
         # Parse date
         try:
             sale_date = datetime.strptime(data['sale_date'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
-        
+
         # Get unit price and rates
         unit_price = _to_decimal(data['unit_price'])
         if unit_price <= 0:
             return jsonify({'error': 'سعر الوحدة يجب أن يكون أكبر من صفر'}), 400
-        
+
         # Prepare rates dictionary
         rates = {
             'company_commission_rate': data.get('company_commission_rate', 0),
@@ -196,7 +211,7 @@ def create_sale_with_excel_logic():
             'salesperson_tax_rate': data.get('salesperson_tax_rate', 19),
             'sales_manager_tax_rate': data.get('sales_manager_tax_rate', 19)
         }
-        
+
         # Calculate all amounts using Excel logic
         calculations = calculate_excel_logic(unit_price, rates)
         
@@ -296,17 +311,30 @@ def update_sale_with_excel_logic(sale_id):
         if existing_sale:
             return jsonify({'error': 'كود الوحدة موجود بالفعل'}), 400
         
+
+        # تحويل جميع الحقول الرقمية إلى أرقام إنجليزية
+        data['unit_price'] = convert_arabic_to_english_digits(data['unit_price'])
+        data['company_commission_rate'] = convert_arabic_to_english_digits(data.get('company_commission_rate', 0))
+        data['salesperson_commission_rate'] = convert_arabic_to_english_digits(data.get('salesperson_commission_rate', 0))
+        data['salesperson_incentive_rate'] = convert_arabic_to_english_digits(data.get('salesperson_incentive_rate', 0))
+        data['sales_manager_commission_rate'] = convert_arabic_to_english_digits(data.get('sales_manager_commission_rate', 0))
+        data['vat_rate'] = convert_arabic_to_english_digits(data.get('vat_rate', 14))
+        data['sales_tax_rate'] = convert_arabic_to_english_digits(data.get('sales_tax_rate', 5))
+        data['annual_tax_rate'] = convert_arabic_to_english_digits(data.get('annual_tax_rate', 22.5))
+        data['salesperson_tax_rate'] = convert_arabic_to_english_digits(data.get('salesperson_tax_rate', 19))
+        data['sales_manager_tax_rate'] = convert_arabic_to_english_digits(data.get('sales_manager_tax_rate', 19))
+
         # Parse date
         try:
             sale_date = datetime.strptime(data['sale_date'], '%Y-%m-%d').date()
         except ValueError:
             return jsonify({'error': 'تاريخ البيع غير صحيح'}), 400
-        
+
         # Get unit price and rates
         unit_price = _to_decimal(data['unit_price'])
         if unit_price <= 0:
             return jsonify({'error': 'سعر الوحدة يجب أن يكون أكبر من صفر'}), 400
-        
+
         # Prepare rates dictionary
         rates = {
             'company_commission_rate': data.get('company_commission_rate', 0),
@@ -319,7 +347,7 @@ def update_sale_with_excel_logic(sale_id):
             'salesperson_tax_rate': data.get('salesperson_tax_rate', 19),
             'sales_manager_tax_rate': data.get('sales_manager_tax_rate', 19)
         }
-        
+
         # Calculate all amounts using Excel logic
         calculations = calculate_excel_logic(unit_price, rates)
         

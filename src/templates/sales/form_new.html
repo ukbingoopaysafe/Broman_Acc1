@@ -202,7 +202,7 @@
                             <div class="input-group">
                                 <input type="number" class="form-control" id="unit_price" name="unit_price" 
                                        value="{% if sale %}{{ sale.unit_price }}{% endif %}" 
-                                       step="0.01" min="0" required>
+                                       type="text" inputmode="decimal" dir="auto" required>
                                 <span class="input-group-text">جنيه</span>
                             </div>
                             <div class="invalid-feedback">يرجى إدخال سعر الوحدة</div>
@@ -222,7 +222,7 @@
                             <label for="company_commission_rate" class="form-label">نسبة عمولة الشركة <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="company_commission_rate" 
-                                       name="company_commission_rate" step="0.01" min="0" max="100" required>
+                                       name="company_commission_rate" type="text" inputmode="decimal" dir="auto" required>
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -230,7 +230,7 @@
                             <label for="salesperson_commission_rate" class="form-label">نسبة عمولة السلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_commission_rate" 
-                                       name="salesperson_commission_rate" step="0.01" min="0" max="100" value="0">
+                                       name="salesperson_commission_rate" type="text" inputmode="decimal" dir="auto" value="0">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -241,7 +241,7 @@
                             <label for="salesperson_incentive_rate" class="form-label">نسبة الحافز للسلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_incentive_rate" 
-                                       name="salesperson_incentive_rate" step="0.01" min="0" max="100" value="0">
+                                       name="salesperson_incentive_rate" type="text" inputmode="decimal" dir="auto" value="0">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -249,7 +249,7 @@
                             <label for="sales_manager_commission_rate" class="form-label">نسبة عمولة مدير المبيعات</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="sales_manager_commission_rate" 
-                                       name="sales_manager_commission_rate" step="0.01" min="0" max="100" value="0">
+                                       name="sales_manager_commission_rate" type="text" inputmode="decimal" dir="auto" value="0">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -268,7 +268,7 @@
                             <label for="vat_rate" class="form-label">نسبة ضريبة القيمة المضافة</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="vat_rate" 
-                                       name="vat_rate" step="0.01" min="0" max="100" value="14">
+                                       name="vat_rate" type="text" inputmode="decimal" dir="auto" value="14">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -276,7 +276,7 @@
                             <label for="sales_tax_rate" class="form-label">نسبة ضريبة المبيعات</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="sales_tax_rate" 
-                                       name="sales_tax_rate" step="0.01" min="0" max="100" value="5">
+                                       name="sales_tax_rate" type="text" inputmode="decimal" dir="auto" value="5">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -287,7 +287,7 @@
                             <label for="annual_tax_rate" class="form-label">نسبة الضريبة السنوية</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="annual_tax_rate" 
-                                       name="annual_tax_rate" step="0.01" min="0" max="100" value="22.5">
+                                       name="annual_tax_rate" type="text" inputmode="decimal" dir="auto" value="22.5">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -295,7 +295,7 @@
                             <label for="salesperson_tax_rate" class="form-label">نسبة ضريبة السلز</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="salesperson_tax_rate" 
-                                       name="salesperson_tax_rate" step="0.01" min="0" max="100" value="19">
+                                       name="salesperson_tax_rate" type="text" inputmode="decimal" dir="auto" value="19">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -306,7 +306,7 @@
                             <label for="sales_manager_tax_rate" class="form-label">نسبة ضريبة مدير المبيعات</label>
                             <div class="input-group">
                                 <input type="number" class="form-control percentage-input" id="sales_manager_tax_rate" 
-                                       name="sales_manager_tax_rate" step="0.01" min="0" max="100" value="19">
+                                       name="sales_manager_tax_rate" type="text" inputmode="decimal" dir="auto" value="19">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -517,11 +517,54 @@ function handlePropertyTypeChange() {
 
 function loadExistingData() {
     // Load existing sale data into form
+    // For percentage fields we store decimals (e.g. 0.05) in the DB/backend
+    // but the UI expects a percent value (e.g. 5). Detect those keys and
+    // convert decimals to percentages when populating inputs.
+    const percentFields = new Set([
+        'company_commission_rate',
+        'salesperson_commission_rate',
+        'salesperson_incentive_rate',
+        'sales_manager_commission_rate',
+        'vat_rate',
+        'sales_tax_rate',
+        'annual_tax_rate',
+        'salesperson_tax_rate',
+        'sales_manager_tax_rate'
+    ]);
+
+    // Helper: convert stored DB value to UI display value for percentage fields
+    const toDisplayPercent = (raw) => {
+        if (raw === null || raw === undefined || raw === '') return '';
+        const n = parseFloat(raw);
+        if (!isFinite(n)) return '';
+        // If stored as a decimal fraction (e.g. 0.05) convert to percent (5)
+        // Otherwise assume it's already a percent value and display as-is.
+        return (Math.abs(n) <= 1) ? +((n * 100).toFixed(4)) : +n.toFixed(4);
+    };
+
+    // Monetary fields should be displayed exactly as stored (no division/multiplication)
+    const monetaryFields = new Set(['unit_price', 'company_commission_amount', 'salesperson_commission_amount', 'salesperson_incentive_amount', 'sales_manager_commission_amount', 'vat_amount', 'sales_tax_amount', 'annual_tax_amount', 'salesperson_tax_amount', 'sales_manager_tax_amount', 'net_company_income', 'net_salesperson_income', 'net_sales_manager_income', 'total_company_commission_before_tax', 'total_salesperson_incentive_paid']);
+
     Object.keys(currentSale).forEach(key => {
         const element = document.getElementById(key);
-        if (element && currentSale[key] !== null) {
-            element.value = currentSale[key];
+        if (!element || currentSale[key] === null) return;
+
+        let value = currentSale[key];
+
+        if (percentFields.has(key)) {
+            element.value = toDisplayPercent(value);
+            return;
         }
+
+        if (monetaryFields.has(key)) {
+            // Show full monetary value with same precision as stored
+            const n = parseFloat(value);
+            element.value = (isFinite(n)) ? (+n.toFixed(2)) : value;
+            return;
+        }
+
+        // Fallback: set raw value (strings, dates, names, etc.)
+        element.value = value;
     });
 }
 
