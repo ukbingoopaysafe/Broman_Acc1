@@ -603,13 +603,7 @@ function debounce(func, wait) {
     };
 }
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('ar-EG', {
-        style: 'currency',
-        currency: 'EGP',
-        minimumFractionDigits: 2
-    }).format(amount);
-}
+// Use the global formatCurrency from static/js/main.js for consistent formatting across the app
 
 // Utility functions (assuming they exist in base template)
 function showAlert(message, type) {

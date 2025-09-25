@@ -638,15 +638,7 @@ function clearCalculations() {
     });
 }
 
-function formatCurrency(amount) {
-    // Fix decimal point display issue mentioned in prompt
-    return new Intl.NumberFormat('ar-EG', {
-        style: 'currency',
-        currency: 'EGP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(amount).replace('ج.م.', '') + ' جنيه';
-}
+// Use global formatCurrency from static/js/main.js which formats numbers consistently across the app
 
 async function handleFormSubmit(e) {
     e.preventDefault();
