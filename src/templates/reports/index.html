@@ -32,6 +32,67 @@
     </div>
   </div>
 </div>
+
+<div class="row mt-4">
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">تقرير الأرباح والخسائر</div>
+      <div class="card-body">
+        <div class="h5">إجمالي الإيرادات: <span id="plIncome">EGP 0</span></div>
+        <div class="h5">إجمالي المصروفات: <span id="plExpenses">EGP 0</span></div>
+        <div class="h5">صافي الربح: <span id="plNetProfit">EGP 0</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">المبيعات حسب نوع العقار</div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>نوع العقار</th>
+              <th>عدد المبيعات</th>
+              <th>إجمالي الإيرادات</th>
+              <th>صافي دخل الشركة</th>
+            </tr>
+          </thead>
+          <tbody id="salesByPropertyTypeBody">
+            <tr><td colspan="4" class="text-center">لا توجد بيانات</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12 mb-3">
+    <div class="card">
+      <div class="card-header">تقرير العمولات</div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>مندوب المبيعات</th>
+              <th>مدير المبيعات</th>
+              <th>عمولة مندوب المبيعات</th>
+              <th>حافز مندوب المبيعات</th>
+              <th>ضريبة مندوب المبيعات</th>
+              <th>صافي دخل مندوب المبيعات</th>
+              <th>عمولة مدير المبيعات</th>
+              <th>ضريبة مدير المبيعات</th>
+              <th>صافي دخل مدير المبيعات</th>
+            </tr>
+          </thead>
+          <tbody id="commissionsReportBody">
+            <tr><td colspan="9" class="text-center">لا توجد بيانات</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -50,25 +111,68 @@ async function load() {
   if (q('dateFrom').value) params.set('date_from', q('dateFrom').value);
   if (q('dateTo').value) params.set('date_to', q('dateTo').value);
 
+  // Sales Summary
   const sales = await fetchJSON('/reports/api/sales-summary?' + params.toString());
+  q('salesCount').textContent = new Intl.NumberFormat('ar-EG', { maximumFractionDigits: 0 }).format(sales.count);
+  q('salesRevenue').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(sales.revenue);
+
+  // Transactions Summary
   const tx = await fetchJSON('/reports/api/transactions-summary?' + params.toString());
+  q('txIncome').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.income);
+  q('txExpenses').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.expenses);
 
-  if (window.formatNumber) q('salesCount').textContent = formatNumber(sales.count, { maximumFractionDigits: 0 });
-  else q('salesCount').textContent = new Intl.NumberFormat('en-US').format(sales.count);
+  // Profit & Loss Report
+  const pl = await fetchJSON('/reports/api/profit-loss?' + params.toString());
+  q('plIncome').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(pl.total_income);
+  q('plExpenses').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(pl.total_expenses);
+  q('plNetProfit').textContent = new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(pl.net_profit);
 
-  if (window.formatCurrency) q('salesRevenue').textContent = formatCurrency(sales.revenue, 'EGP');
-  else q('salesRevenue').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(sales.revenue);
+  // Sales by Property Type Report
+  const salesByPropertyType = await fetchJSON('/reports/api/sales-by-property-type?' + params.toString());
+  const salesByPropertyTypeBody = q('salesByPropertyTypeBody');
+  salesByPropertyTypeBody.innerHTML = '';
+  if (salesByPropertyType.length > 0) {
+    salesByPropertyType.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.property_type}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { maximumFractionDigits: 0 }).format(row.total_sales)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_revenue)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_net_income)}</td>
+      `;
+      salesByPropertyTypeBody.appendChild(tr);
+    });
+  } else {
+    salesByPropertyTypeBody.innerHTML = '<tr><td colspan="4" class="text-center">لا توجد بيانات</td></tr>';
+  }
 
-  if (window.formatCurrency) q('txIncome').textContent = formatCurrency(tx.income, 'EGP');
-  else q('txIncome').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.income);
-
-  if (window.formatCurrency) q('txExpenses').textContent = formatCurrency(tx.expenses, 'EGP');
-  else q('txExpenses').textContent = new Intl.NumberFormat('en-US', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(tx.expenses);
+  // Commissions Report
+  const commissionsReport = await fetchJSON('/reports/api/commissions-report?' + params.toString());
+  const commissionsReportBody = q('commissionsReportBody');
+  commissionsReportBody.innerHTML = '';
+  if (commissionsReport.length > 0) {
+    commissionsReport.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.salesperson_name}</td>
+        <td>${row.sales_manager_name}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_salesperson_commission)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_salesperson_incentive)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_salesperson_tax)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_net_salesperson_income)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_sales_manager_commission)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_sales_manager_tax)}</td>
+        <td>${new Intl.NumberFormat('ar-EG', { style:'currency', currency:'EGP', minimumFractionDigits:0, maximumFractionDigits:2 }).format(row.total_net_sales_manager_income)}</td>
+      `;
+      commissionsReportBody.appendChild(tr);
+    });
+  } else {
+    commissionsReportBody.innerHTML = '<tr><td colspan="9" class="text-center">لا توجد بيانات</td></tr>';
+  }
 }
 
-document.getElementById('loadReports').addEventListener('click', () => load().catch(err => alert(err.message)));
-document.addEventListener('DOMContentLoaded', () => load().catch(err => alert(err.message)));
+document.getElementById('loadReports').addEventListener('click', () => load().catch(err => console.error(err)));
+document.addEventListener('DOMContentLoaded', () => load().catch(err => console.error(err)));
 </script>
 {% endblock %}
-
 
